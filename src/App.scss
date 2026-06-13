@@ -718,52 +718,78 @@ textarea {
   .swatches-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
   .swatch,
   .add-swatch-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 7px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    box-sizing: border-box;
   }
 
   .swatch {
     position: relative;
-    border: 1px solid $border-color;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
-    transition: $transition-default;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+
+    &:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
 
     &.active {
-      border-color: $accent-violet;
-      box-shadow: 0 0 0 2px $accent-soft;
+      border-color: #a78bfa;
+      box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.35), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+      transform: scale(1.05);
     }
   }
 
   .remove-stop-btn {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    top: -5px;
+    right: -5px;
     width: 14px;
     height: 14px;
     padding: 0;
     border: 0;
-    border-radius: 999px;
-    background-color: $danger;
-    color: $text-primary;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: #ffffff;
     cursor: pointer;
     font-size: 10px;
-    line-height: 14px;
+    line-height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .swatch:hover .remove-stop-btn {
+    opacity: 1;
   }
 
   .add-swatch-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px dashed $border-color;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
     background: transparent;
-    color: $text-secondary;
+    color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
+    transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+      color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.04);
+    }
   }
 
   .color-picker-popover {

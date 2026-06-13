@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { KeyboardEvent, MouseEvent, TouchEvent } from 'react';
-import { Icon } from '@iconify/react';
+
 import { defaultPatterns } from './patternsData';
 import type {
   ShaderPattern,
@@ -326,7 +326,7 @@ export default function App() {
               onClick={() => handleParameterChange('seed', Math.floor(Math.random() * 10000))}
               style={{ padding: '0 10px', height: '28px', minHeight: '28px' }}
             >
-              <Icon icon="solar:shuffle-bold" width="12" />
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" /></svg>
               Roll
             </button>
           </div>
@@ -1500,7 +1500,7 @@ ${stylesObject}
               aria-expanded={dropdownOpen}
             >
               <span>{docName}</span>
-              <Icon icon="solar:alt-arrow-down-bold" width="14" />
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
             </button>
             
             {dropdownOpen && (
@@ -1519,12 +1519,8 @@ ${stylesObject}
               </div>
             )}
           </div>
-          <button className="btn btn-primary" onClick={handleRandomizeAll} title="Randomize everything">
-            <Icon icon="solar:shuffle-bold" width="14" />
-            Randomize
-          </button>
           <button className="btn btn-secondary" onClick={handleSave}>
-            <Icon icon="solar:disk-bold" width="15" />
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
             Save
           </button>
 
@@ -1543,17 +1539,24 @@ ${stylesObject}
           </button>
           <button 
             className="btn btn-icon" 
+            onClick={handleRandomizeAll} 
+            title="Randomize parameters"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" ry="4" /><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></svg>
+          </button>
+          <button 
+            className="btn btn-icon" 
             onClick={() => { setExportType('code'); setExportModalOpen(true); }}
             title="Export Assets (Code)"
           >
-            <Icon icon="solar:export-bold" width="16" />
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
           </button>
           <button 
             className="btn btn-icon" 
             onClick={() => setSettingsModalOpen(true)}
             title="Settings"
           >
-            <Icon icon="solar:settings-bold" width="16" />
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
           </button>
         </div>
       </header>
@@ -1609,7 +1612,7 @@ ${stylesObject}
                 <div className="compare-handle" style={{ left: `${comparePercent}%` }}>
                   <div className="compare-handle-line" />
                   <div className="compare-handle-button">
-                    <Icon icon="solar:transfer-horizontal-bold" width="18" />
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 10 22 15 17 20" /><line x1="2" y1="15" x2="22" y2="15" /><polyline points="7 10 2 5 7 2" /><line x1="22" y1="5" x2="2" y2="5" /></svg>
                   </div>
                 </div>
 
@@ -1652,7 +1655,7 @@ ${stylesObject}
                     pointerEvents: 'auto'
                   }}
                 >
-                  <Icon icon="solar:stars-bold" width="32" style={{ marginBottom: '12px', color: '#a855f7' }} />
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px', color: '#a855f7' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>ShaderBuild Hybrid Stage</h4>
                   <p style={{ margin: 0, fontSize: '11px', color: '#ccc' }}>WebGL flowing background combined with CSS glass card refraction overlay.</p>
                 </div>
@@ -1820,37 +1823,51 @@ ${stylesObject}
 
                 <div className="palette-actions">
                   <button className="palette-row-btn" onClick={handleRandomizePalette}>
-                    <Icon icon="solar:shuffle-bold" width="12" />
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" /></svg>
                     Randomize
-                  </button>
-                  <button className="palette-row-btn" onClick={handleAddStop}>
-                    <Icon icon="solar:add-circle-bold" width="12" />
-                    Add Stop
                   </button>
                 </div>
 
                 {/* Color swatches */}
-                <div className="swatches-grid">
-                  {palette.stops.map(stop => (
-                    <div 
-                      key={stop.id}
-                      className={`swatch ${stop.id === activeStopId ? 'active' : ''}`}
-                      style={{ backgroundColor: stop.color }}
-                      onClick={() => setActiveStopId(stop.id)}
+                <div className="swatches-grid" aria-label="Gradient color stops">
+                  {palette.stops.map(stop => {
+                    const isActive = stop.id === activeStopId;
+                    return (
+                      <div 
+                        key={stop.id}
+                        className={`swatch ${isActive ? 'active' : ''}`}
+                        style={{ backgroundColor: stop.color }}
+                        onClick={() => setActiveStopId(stop.id)}
+                      >
+                        {palette.stops.length > 2 && (
+                          <button 
+                            type="button"
+                            className="remove-stop-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveStop(stop.id);
+                            }}
+                            title="Remove color stop"
+                            aria-label="Remove color stop"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  
+                  {palette.stops.length < 8 && (
+                    <button 
+                      type="button"
+                      className="add-swatch-btn"
+                      onClick={handleAddStop}
+                      title="Add color stop"
+                      aria-label="Add color stop"
                     >
-                      {palette.stops.length > 2 && (
-                        <button 
-                          className="remove-stop-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveStop(stop.id);
-                          }}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    </button>
+                  )}
                 </div>
 
                 {/* Selected stop color editing details */}
