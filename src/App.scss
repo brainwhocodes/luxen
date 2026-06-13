@@ -945,48 +945,7 @@ textarea {
     }
   }
 
-  .advanced-section {
-    padding-top: 12px;
-    border-top: 1px solid $border-color;
-  }
 
-  .advanced-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: $text-muted;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-
-  .advanced-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    padding: 10px;
-    border: 1px solid $border-color;
-    border-radius: 8px;
-    background-color: rgba(18, 18, 26, 0.82);
-    color: $text-secondary;
-    font-family: $mono-font-stack;
-    font-size: 11px;
-
-    p {
-      margin: 0;
-    }
-  }
-
-  .export-summary {
-    padding-top: 12px;
-    border-top: 1px solid $border-color;
-    color: $text-muted;
-    font-size: 11px;
-    text-align: center;
-  }
 }
 
 .css-preview-element {

@@ -269,8 +269,6 @@ export default function App() {
   const [exportType, setExportType] = useState<'code' | 'image' | 'react' | 'css-export'>('code');
   const [settingsModalOpen, setSettingsModalOpen] = useState<boolean>(false);
 
-  // Advanced section collapse state
-  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
   const [comparePercent, setComparePercent] = useState<number>(50);
   // Filter and classify parameters
   const visibleParams = parameters.filter(p => {
@@ -1473,66 +1471,7 @@ ${stylesObject}
                 </div>
               )}
             </div>
-            {/* 6. Advanced Uniform Mapping section (collapsed by default) */}
-            <div className="advanced-section">
-              <div 
-                className="advanced-trigger" 
-                onClick={() => setAdvancedOpen(!advancedOpen)}
-              >
-                <span>Advanced Variable Mapping</span>
-                <span style={{ fontSize: '10px' }}>{advancedOpen ? 'HIDE' : 'SHOW'}</span>
-              </div>
-              
-              {advancedOpen && (
-                <div className="advanced-content">
-                  {selectedPattern.renderEngine === 'webgl2' && (
-                    <>
-                      <p><strong>Shader Engine:</strong> WebGL2 fragment shader</p>
-                      <p><strong>GLSL Uniforms passed:</strong></p>
-                      {parameters.map(p => (
-                        <div key={p.key} style={{ paddingLeft: '8px' }}>
-                          • <code>u_{p.key}</code>: <code>float</code> ({p.value})
-                        </div>
-                      ))}
-                      <div style={{ paddingLeft: '8px' }}>
-                        • <code>u_colors[8]</code>: <code>vec3[]</code> (active palette RGB)
-                      </div>
-                    </>
-                  )}
-                  {selectedPattern.renderEngine === 'css' && (
-                    <>
-                      <p><strong>Shader Engine:</strong> CSS Gradient layer recipe</p>
-                      <p><strong>CSS variables injected:</strong></p>
-                      {parameters.map(p => (
-                        <div key={p.key} style={{ paddingLeft: '8px' }}>
-                          • <code>--sb-{p.key}</code>: <code>{p.value}</code>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                  {selectedPattern.renderEngine === 'hybrid' && (
-                    <>
-                      <p><strong>Shader Engine:</strong> Hybrid (WebGL Canvas + CSS Mask)</p>
-                      <p><strong>Variables passed to canvas & overlay:</strong></p>
-                      <div style={{ paddingLeft: '8px' }}>
-                        • Canvas GLSL: <code>u_speed</code>, <code>u_time</code>
-                      </div>
-                      <div style={{ paddingLeft: '8px' }}>
-                        • CSS blur: <code>--sb-blur</code>
-                      </div>
-                      <div style={{ paddingLeft: '8px' }}>
-                        • SVG Displacement: <code>--sb-turbulence</code>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
 
-            {/* 7. Export summary footer */}
-            <div className="export-summary">
-              Export format set to: {exportSettings.format.toUpperCase()} ({exportSettings.width}×{exportSettings.height})
-            </div>
           </div>
         </section>
       </main>
