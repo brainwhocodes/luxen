@@ -10,6 +10,7 @@ import type {
   PreviewSettings
 } from './types';
 
+import { Header, PreviewStage, ParametersPanel, ExportModal, SettingsModal, CodeModal } from './components/organisms';
 const palettePresets: GradientPalette[] = [
   {
     id: 'preset-inferno-chrome',
@@ -298,63 +299,6 @@ export default function App() {
   const lightingParams = visibleParams.filter(p => lightingKeys.includes(p.key));
   const textureParams = visibleParams.filter(p => textureKeys.includes(p.key));
   const regularParams = visibleParams.filter(p => !lightingKeys.includes(p.key) && !textureKeys.includes(p.key));
-
-  const renderParam = (param: EditorParameter) => {
-    const isReededLines = selectedPattern.id === 'lumen-reeded-glass' && param.key === 'lines';
-    const labelText = isReededLines ? 'Ridges / Zoom' : param.label;
-
-    if (param.key === 'seed') {
-      return (
-        <div className="control-row" key={param.key}>
-          <div className="label-row">
-            <span className="name">{param.label}</span>
-            <span className="val">{Math.round(Number(param.value))}</span>
-          </div>
-          <div className="slider-wrapper">
-            <input 
-              type="range"
-              min={param.min ?? 0}
-              max={param.max ?? 9999}
-              step={1}
-              value={Number(param.value)}
-              onChange={(e) => handleParameterChange('seed', Number(e.target.value))}
-              aria-label="Shader seed slider"
-            />
-            <button
-              type="button"
-              className="btn btn-secondary roll-btn"
-              onClick={() => handleParameterChange('seed', Math.floor(Math.random() * 10000))}
-              style={{ padding: '0 10px', height: '28px', minHeight: '28px' }}
-            >
-              <DiceIcon size={12} />
-              Roll
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="control-row" key={param.key}>
-        <div className="label-row">
-          <span className="name">{labelText}</span>
-          <span className="val">
-            {typeof param.value === 'number' ? param.value.toFixed(2) : String(param.value)}
-          </span>
-        </div>
-        <div className="slider-wrapper">
-          <input 
-            type="range"
-            min={param.min ?? 0.0}
-            max={param.max ?? 1.0}
-            step={param.step ?? 0.01}
-            value={Number(param.value)}
-            onChange={(e) => handleParameterChange(param.key, Number(e.target.value))}
-          />
-        </div>
-      </div>
-    );
-  };
 
   // --- Refs ---
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1448,748 +1392,120 @@ ${stylesObject}
 
   return (
     <div className="editor-layout">
-      {/* Top Bar */}
-      <header className="top-bar">
-        <div className="brand">
-          <span className="logo-mark" aria-hidden="true" />
-          SHADERBUILD
-        </div>
+      {/* Top Bar Organism */}
+      <Header 
+        docName={docName}
+        isDirty={isDirty}
+        aspectRatio={aspectRatio}
+        dropdownOpen={dropdownOpen}
+        patterns={patterns}
+        selectedPattern={selectedPattern}
+        handleSelectPattern={handleSelectPattern}
+        setDropdownOpen={setDropdownOpen}
+        setAspectRatio={setAspectRatio}
+        handleSave={handleSave}
+        handleExportPNG={handleExportPNG}
+        handleExportWebM={handleExportWebM}
+        handleExportGIF={handleExportGIF}
+        setExportModalOpen={setExportModalOpen}
+        setExportType={setExportType}
+        setSettingsModalOpen={setSettingsModalOpen}
+        handleRandomizeAll={handleRandomizeAll}
+        setSetModalOpen={setSetModalOpen}
+        aspectMap={aspectMap}
+        setPreview={setPreview}
+      />
 
-
-        {/* Aspect Ratio Segmented Control */}
-        <div className="segmented-control" role="group" aria-label="Canvas aspect ratio" style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px', borderRadius: '8px' }}>
-          {['16:9', '3:2', '1:1', '4:5', '21:9'].map(ratio => (
-            <button
-              key={ratio}
-              className={`segmented-btn ${aspectRatio === ratio ? 'active' : ''}`}
-              onClick={() => {
-                setAspectRatio(ratio);
-                const ar = aspectMap[ratio];
-                const h = 1080;
-                const w = 2 * Math.round((h * ar) / 2);
-                setPreview(prev => ({ ...prev, width: w, height: h }));
-
-              }}
-              style={{
-                height: '26px',
-                padding: '0 8px',
-                borderRadius: '5px',
-                fontFamily: 'monospace',
-                fontSize: '11px',
-                backgroundColor: aspectRatio === ratio ? '#26262d' : 'transparent',
-                color: aspectRatio === ratio ? '#fff' : '#71717a',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background 0.15s, color 0.15s'
-              }}
-            >
-              {ratio}
-            </button>
-          ))}
-        </div>
-
-        <div className="actions">
-          {isDirty && <span className="dirty-indicator">Unsaved</span>}
-
-          {/* Selected Pattern dropdown moved to top right */}
-          <div className="pattern-selector-container" style={{ position: 'relative' }}>
-            <button 
-              className="btn btn-secondary pattern-picker-trigger"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              aria-haspopup="listbox"
-              aria-expanded={dropdownOpen}
-            >
-              <span>{docName}</span>
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-            </button>
-            
-            {dropdownOpen && (
-              <div className="dropdown-menu" role="listbox" style={{ right: 0 }}>
-                {patterns.map(p => (
-                  <div
-                    key={p.id}
-                    className={`dropdown-item ${p.id === selectedPattern.id ? 'active' : ''}`}
-                    onClick={() => handleSelectPattern(p)}
-                    role="option"
-                    aria-selected={p.id === selectedPattern.id}
-                  >
-                    {p.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <button className="btn btn-secondary" onClick={handleSave}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
-            Save
-          </button>
-
-          {/* Export buttons from lumenshaders */}
-          <button className="btn btn-secondary" onClick={handleExportPNG} title="Save still image (PNG)">
-            Image
-          </button>
-          <button className="btn btn-secondary" onClick={handleExportWebM} title="Record WebM Video">
-            Video
-          </button>
-          <button className="btn btn-secondary" onClick={handleExportGIF} title="Render seamless looping GIF">
-            GIF
-          </button>
-          <button className="btn btn-secondary" onClick={() => setSetModalOpen(true)} title="Generate set of variations">
-            Set
-          </button>
-          <button 
-            className="btn btn-icon" 
-            onClick={handleRandomizeAll} 
-            title="Randomize parameters"
-          >
-            <DiceIcon size={18} />
-          </button>
-          <button 
-            className="btn btn-icon" 
-            onClick={() => { setExportType('code'); setExportModalOpen(true); }}
-            title="Export Assets (Code)"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
-          </button>
-          <button 
-            className="btn btn-icon" 
-            onClick={() => setSettingsModalOpen(true)}
-            title="Settings"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Workspace (3 Panels) */}
+      {/* Main Workspace (2 Columns) */}
       <main className="workspace">
-        
+        {/* Center Panel: Live Preview Stage Organism */}
+        <PreviewStage 
+          selectedPattern={selectedPattern}
+          canvasRef={canvasRef}
+          comparePercent={comparePercent}
+          setComparePercent={setComparePercent}
+          aspectRatio={aspectRatio}
+          cssVariablesStyle={cssVariablesStyle}
+          parameters={parameters}
+          compileError={compileError}
+          preview={preview}
+        />
 
-        {/* Center Panel: Live Preview Stage */}
-        <section className="preview-stage">
-          <div className="preview-wrapper" style={{ '--aspect-ratio': aspectRatio.replace(':', ' / ') } as React.CSSProperties}>
-            {(selectedPattern.renderEngine === 'css' || selectedPattern.renderEngine === 'hybrid') && (
-              <style>{codeSource}</style>
-            )}
-            {(selectedPattern.renderEngine === 'webgl2' || selectedPattern.renderEngine === 'hybrid') && (
-              <canvas 
-                ref={canvasRef} 
-                width={preview.width} 
-                height={preview.height}
-              />
-            )}
-
-            {selectedPattern.renderEngine === 'css' && (
-              <div className="compare-slider-wrapper">
-                {/* Before (Unfiltered Background) */}
-                <div 
-                  className="css-preview-container before-layer" 
-                  style={{
-                    backgroundImage: selectedPattern.unsplashUrl ? `url(${selectedPattern.unsplashUrl})` : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                />
-
-                {/* After (Filtered Layer) */}
-                <div 
-                  className="css-preview-container after-layer" 
-                  style={{
-                    backgroundImage: selectedPattern.unsplashUrl ? `url(${selectedPattern.unsplashUrl})` : undefined,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    ...cssVariablesStyle,
-                    clipPath: `polygon(${comparePercent}% 0, 100% 0, 100% 100%, ${comparePercent}% 100%)`
-                  }}
-                >
-                  <div 
-                    className="css-preview-element" 
-                    style={cssVariablesStyle}
-                  />
-                </div>
-
-                {/* Visible Handle */}
-                <div className="compare-handle" style={{ left: `${comparePercent}%` }}>
-                  <div className="compare-handle-line" />
-                  <div className="compare-handle-button">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 10 22 15 17 20" /><line x1="2" y1="15" x2="22" y2="15" /><polyline points="7 10 2 5 7 2" /><line x1="22" y1="5" x2="2" y2="5" /></svg>
-                  </div>
-                </div>
-
-                {/* Invisible Range Input for Native Interaction */}
-                <input 
-                  type="range"
-                  className="compare-slider-input"
-                  min="0"
-                  max="100"
-                  value={comparePercent}
-                  onChange={(e) => setComparePercent(Number(e.target.value))}
-                  aria-label="Before and after comparison slider"
-                />
-              </div>
-            )}
-
-            {selectedPattern.renderEngine === 'hybrid' && (
-              <div className="css-preview-container" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                <div 
-                  className="glass-card" 
-                  style={{
-                    position: 'absolute',
-                    width: '60%',
-                    height: '50%',
-                    left: '20%',
-                    top: '25%',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(255,255,255,0.06)',
-                    backdropFilter: `blur(${parameters.find(p => p.key === 'blur')?.value ?? 20}px)`,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                    filter: 'url(#svg-displacement-filter)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    padding: '24px',
-                    textAlign: 'center',
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '12px', color: '#a855f7' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>ShaderBuild Hybrid Stage</h4>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#ccc' }}>WebGL flowing background combined with CSS glass card refraction overlay.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Inline SVG displacement filter for Hybrid/CSS mode */}
-            {(selectedPattern.renderEngine === 'hybrid' || selectedPattern.id === 'conic-glow-ring') && (
-              <svg style={{ display: 'none' }}>
-                <filter id="svg-displacement-filter">
-                  <feTurbulence 
-                    type="fractalNoise" 
-                    baseFrequency={Number(parameters.find(p => p.key === 'turbulence')?.value ?? 0.02)}
-                    numOctaves="3" 
-                    result="noise" 
-                  />
-                  <feDisplacementMap 
-                    in="SourceGraphic" 
-                    in2="noise" 
-                    scale={Number(parameters.find(p => p.key === 'displacement')?.value ?? 15)}
-                    xChannelSelector="R" 
-                    yChannelSelector="G" 
-                  />
-                </filter>
-              </svg>
-            )}
-
-            {compileError && (
-              <div className="compile-overlay">
-                <div>⚠️ Compile failed:</div>
-                <div style={{ marginTop: '4px', opacity: 0.85 }}>{compileError}</div>
-              </div>
-            )}
-          </div>
-
-        </section>
-
-        {/* Right Panel: Parameters Panel */}
-        <section className="panel parameters-panel">
-          <div className="panel-header">
-            <h2>Parameters</h2>
-          </div>
-          <div className="panel-body">
-            
-            {/* 1 & 2. Active Pattern name & Image banner */}
-            <div className="active-pattern-header">
-              <h3>{docName}</h3>
-              <span className="engine-tag">{selectedPattern.renderEngine}</span>
-              <p>{selectedPattern.description}</p>
-            </div>
-
-            <div 
-              className="active-pattern-preview"
-              style={{ backgroundImage: `url(${selectedPattern.previewSnapshotUrl})` }}
-            >
-              {selectedPattern.unsplashUrl && (
-                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.1)' }} />
-              )}
-            </div>
-
-            {/* 3. Related Pattern selector with thumbs */}
-            <div>
-              <div className="section-label">Patterns</div>
-              <div className="patterns-grid">
-                {patterns.map(p => (
-                  <div 
-                    key={p.id} 
-                    className={`pattern-card ${p.id === selectedPattern.id ? 'active' : ''}`}
-                    onClick={() => handleSelectPattern(p)}
-                  >
-                    <div 
-                      className="thumbnail"
-                      style={{ backgroundImage: `url(${p.thumbnailUrl})` }}
-                    >
-                      <span className={`engine-chip ${p.renderEngine}`}>
-                        {p.renderEngine === 'webgl2' ? 'WebGL' : p.renderEngine === 'css' ? 'CSS' : 'Hybrid'}
-                      </span>
-                    </div>
-                    <span className="name">{p.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 4. Gradient Palette Creator */}
-            <div>
-              <div className="section-label">Gradient Palette</div>
-              <div className="gradient-palette-creator">
-                <div className="preset-row" aria-label="Preset palettes">
-                  {palettePresets.map(preset => {
-                    const isActive = palette.name === preset.name ||
-                      (palette.stops.length === preset.stops.length && palette.stops.every((s, idx) => s.color === preset.stops[idx].color));
-
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        className={`preset-chip ${isActive ? 'active' : ''}`}
-                        onClick={() => handleApplyPalettePreset(preset)}
-                        title={preset.name}
-                        aria-label={`Apply ${preset.name} palette`}
-                      >
-                        {preset.stops.map(stop => (
-                          <i
-                            key={stop.id}
-                            style={{ backgroundColor: stop.color }}
-                          />
-                        ))}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div 
-                  className="gradient-rail-container" 
-                  ref={paletteRailRef}
-                  onClick={(e) => {
-                    // Clicking on the rail adds a stop at that location
-                    if (e.target !== paletteRailRef.current) return;
-                    const rect = paletteRailRef.current.getBoundingClientRect();
-                    const position = Number(((e.clientX - rect.left) / rect.width).toFixed(3));
-                    
-                    if (palette.stops.length < 8) {
-                      const newStop: ColorStop = {
-                        id: `stop_${Date.now()}`,
-                        color: "#fff",
-                        position
-                      };
-                      setPalette(prev => ({
-                        ...prev,
-                        stops: [...prev.stops, newStop]
-                      }));
-                      setActiveStopId(newStop.id);
-                      setIsDirty(true);
-                    }
-                  }}
-                >
-                  <div 
-                    className="gradient-rail"
-                    style={{
-                      background: `linear-gradient(to right, ${
-                        [...palette.stops]
-                          .sort((a, b) => a.position - b.position)
-                          .map(s => `${s.color} ${s.position * 100}%`)
-                          .join(', ')
-                      })`
-                    }}
-                  />
-                  {palette.stops.map(stop => (
-                    <div 
-                      key={stop.id}
-                      className={`color-stop-handle ${stop.id === activeStopId ? 'active' : ''}`}
-                      style={{ left: `${stop.position * 100}%` }}
-                      onMouseDown={(e) => handleStopMouseDown(e, stop.id)}
-                      onTouchStart={(e) => handleStopTouchStart(e, stop.id)}
-                      onKeyDown={(e) => handleStopKeyDown(e, stop.id)}
-                      tabIndex={0}
-                      role="slider"
-                      aria-valuenow={stop.position * 100}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label="Color stop position slider"
-                    />
-                  ))}
-                </div>
-
-                <div className="palette-actions">
-                  <button className="palette-row-btn" onClick={handleRandomizePalette}>
-                    <DiceIcon size={12} />
-                    Randomize
-                  </button>
-                </div>
-
-                {/* Color swatches */}
-                <div className="swatches-grid" aria-label="Gradient color stops">
-                  {palette.stops.map(stop => {
-                    const isActive = stop.id === activeStopId;
-                    return (
-                      <div 
-                        key={stop.id}
-                        className={`swatch ${isActive ? 'active' : ''}`}
-                        style={{ backgroundColor: stop.color }}
-                        onClick={() => setActiveStopId(stop.id)}
-                      >
-                        {palette.stops.length > 2 && (
-                          <button 
-                            type="button"
-                            className="remove-stop-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveStop(stop.id);
-                            }}
-                            title="Remove color stop"
-                            aria-label="Remove color stop"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                  
-                  {palette.stops.length < 8 && (
-                    <button 
-                      type="button"
-                      className="add-swatch-btn"
-                      onClick={handleAddStop}
-                      title="Add color stop"
-                      aria-label="Add color stop"
-                    >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                    </button>
-                  )}
-                </div>
-
-                {/* Selected stop color editing details */}
-                {activeStopId && (
-                  <div className="color-picker-popover">
-                    <div className="picker-inputs">
-                      <input 
-                        type="color" 
-                        value={palette.stops.find(s => s.id === activeStopId)?.color ?? '#ffffff'} 
-                        onChange={(e) => handleUpdateStopColor(activeStopId, e.target.value)}
-                      />
-                      <input 
-                        type="text" 
-                        value={palette.stops.find(s => s.id === activeStopId)?.color ?? ''} 
-                        onChange={(e) => handleUpdateStopColor(activeStopId, e.target.value)}
-                        placeholder="#hex"
-                      />
-                    </div>
-                    <div className="picker-interpolation">
-                      <span>Interpolation:</span>
-                      <select 
-                        value={palette.interpolation} 
-                        onChange={(e) => setPalette(prev => ({ ...prev, interpolation: e.target.value as 'linear' | 'smooth' }))}
-                      >
-                        <option value="linear">Linear</option>
-                        <option value="smooth">Smooth</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 5. Designer controls grouped */}
-            <div className="designer-controls-group">
-              {regularParams.length > 0 && (
-                <div className="regular-controls-section" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {regularParams.map(renderParam)}
-                </div>
-              )}
-
-              {lightingParams.length > 0 && (
-                <div className="control-group-section">
-                  <div className="group-header">Lighting</div>
-                  <div className="group-controls">
-                    {lightingParams.map(renderParam)}
-                  </div>
-                </div>
-              )}
-
-              {textureParams.length > 0 && (
-                <div className="control-group-section">
-                  <div className="group-header">Texture</div>
-                  <div className="group-controls">
-                    {textureParams.map(renderParam)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-          </div>
-        </section>
+        {/* Right Panel: Parameters Panel Organism */}
+        <ParametersPanel 
+          selectedPattern={selectedPattern}
+          patterns={patterns}
+          handleSelectPattern={handleSelectPattern}
+          palette={palette}
+          activeStopId={activeStopId}
+          setActiveStopId={setActiveStopId}
+          regularParams={regularParams}
+          lightingParams={lightingParams}
+          textureParams={textureParams}
+          handleParameterChange={handleParameterChange}
+          handleRandomizePalette={handleRandomizePalette}
+          handleAddStop={handleAddStop}
+          handleRemoveStop={handleRemoveStop}
+          handleUpdateStopColor={handleUpdateStopColor}
+          handleStopMouseDown={handleStopMouseDown}
+          handleStopTouchStart={handleStopTouchStart}
+          handleStopKeyDown={handleStopKeyDown}
+          palettePresets={palettePresets}
+          handleApplyPalettePreset={handleApplyPalettePreset}
+        />
       </main>
 
       {/* MODALS */}
-      {/* 1. Export Assets Modal */}
-      {exportModalOpen && (
-        <div className="modal-overlay" onClick={() => setExportModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Export Assets</h3>
-            <p>Generate, copy, or download the visual styles and integration files representing this pattern.</p>
-            
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <button 
-                className={`btn ${exportType === 'code' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ flex: 1 }}
-                onClick={() => setExportType('code')}
-              >
-                GLSL Source
-              </button>
-              <button 
-                className={`btn ${exportType === 'css-export' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ flex: 1 }}
-                onClick={() => setExportType('css-export')}
-              >
-                CSS Source
-              </button>
-              <button 
-                className={`btn ${exportType === 'react' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ flex: 1 }}
-                onClick={() => setExportType('react')}
-              >
-                React Snippet
-              </button>
-            </div>
+      {/* 1. Code Export Modal */}
+      <CodeModal 
+        exportModalOpen={exportModalOpen}
+        setExportModalOpen={setExportModalOpen}
+        exportType={exportType}
+        setExportType={setExportType}
+        generatedGLSL={generatedGLSL}
+        generatedCSS={generatedCSS}
+        generatedReactComponent={generatedReactComponent}
+      />
 
-            {exportType === 'code' && (
-              <>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>Fragment Shader Source Code:</label>
-                <textarea readOnly value={generatedGLSL} />
-              </>
-            )}
+      {/* 2. Settings Modal */}
+      <SettingsModal 
+        settingsModalOpen={settingsModalOpen}
+        setSettingsModalOpen={setSettingsModalOpen}
+        preview={preview}
+        setPreview={setPreview}
+      />
 
-            {exportType === 'css-export' && (
-              <>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>CSS Snippet:</label>
-                <textarea readOnly value={generatedCSS} />
-              </>
-            )}
+      {/* 3. Export Settings Modal (PNG, Video, GIF) */}
+      <ExportModal 
+        exportModalKind={exportModalKind}
+        setExportModalKind={setExportModalKind}
+        selectedPattern={selectedPattern}
+        parameters={parameters}
+        modalCanvasRef={modalCanvasRef}
+        aspectRatio={aspectRatio}
+        aspectMap={aspectMap}
+        imgRes={imgRes}
+        setImgRes={setImgRes}
+        vidRes={vidRes}
+        setVidRes={setVidRes}
+        vidFps={vidFps}
+        setVidFps={setVidFps}
+        vidLen={vidLen}
+        setVidLen={setVidLen}
+        gifW={gifW}
+        setGifW={setGifW}
+        gifFps={gifFps}
+        setGifFps={setGifFps}
+        gifDither={gifDither}
+        setGifDither={setGifDither}
+        gifLoop={gifLoop}
+        setGifLoop={setGifLoop}
+        executeExportPNG={executeExportPNG}
+        executeExportWebM={executeExportWebM}
+        executeExportGIF={executeExportGIF}
+      />
 
-            {exportType === 'react' && (
-              <>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>React Integration Code:</label>
-                <textarea readOnly value={generatedReactComponent} />
-              </>
-            )}
-
-            <div className="modal-actions">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => {
-                  let text = '';
-                  if (exportType === 'code') text = generatedGLSL;
-                  if (exportType === 'css-export') text = generatedCSS;
-                  if (exportType === 'react') text = generatedReactComponent;
-                  navigator.clipboard.writeText(text);
-                  showToast("Copied to clipboard");
-                }}
-              >
-                Copy to Clipboard
-              </button>
-              <button className="btn btn-primary" onClick={() => setExportModalOpen(false)}>
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Editor Settings Modal */}
-      {settingsModalOpen && (
-        <div className="modal-overlay" onClick={() => setSettingsModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Editor Settings</h3>
-            <p>Customize the workspace layout, resolution targets, and performance preferences.</p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Canvas Resolution</span>
-                <select 
-                  value={`${preview.width}x${preview.height}`}
-                  onChange={(e) => {
-                    const [w, h] = e.target.value.split('x').map(Number);
-                    setPreview(prev => ({ ...prev, width: w, height: h }));
-
-                  }}
-                  style={{ backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px' }}
-                >
-                  <option value="1920x1080">Full HD (1920×1080)</option>
-                  <option value="1080x1080">Square (1080×1080)</option>
-                  <option value="1080x1920">Vertical (1080×1920)</option>
-                  <option value="1440x900">MacBook (1440×900)</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Loop Duration (seconds)</span>
-                <input 
-                  type="number"
-                  value={preview.loopLength}
-                  onChange={(e) => setPreview(prev => ({ ...prev, loopLength: Number(e.target.value) }))}
-                  style={{ width: '80px', backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px', fontFamily: 'monospace' }}
-                />
-              </div>
-
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn btn-primary" onClick={() => setSettingsModalOpen(false)}>
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Export Settings Modal mimicking lumenshaders */}
-      {exportModalKind && (
-        <div className="modal-backdrop" onClick={() => setExportModalKind(null)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <div>
-                <div className="modal-title">
-                  {exportModalKind === 'png' ? 'Export image' : exportModalKind === 'video' ? 'Export video' : 'Export GIF'}
-                </div>
-                <div className="modal-sub">
-                  {selectedPattern.name} • seed {Math.round(parameters.find(p => p.key === 'seed')?.value as number || 0)}
-                </div>
-              </div>
-              <button className="modal-close" onClick={() => setExportModalKind(null)} aria-label="Close export dialog">
-                <svg viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
-              </button>
-            </div>
-
-            <div className="modal-preview">
-              <canvas 
-                ref={modalCanvasRef} 
-                width={480} 
-                height={Math.round(480 / aspectMap[aspectRatio])}
-              />
-              <div className="modal-preview-meta mono">
-                {exportModalKind === 'png' && `${Math.round(parseInt(imgRes, 10) * aspectMap[aspectRatio])} × ${imgRes} px`}
-                {exportModalKind === 'video' && `${Math.round(parseInt(vidRes, 10) * aspectMap[aspectRatio])} × ${vidRes} • ${vidFps} fps`}
-                {exportModalKind === 'gif' && `${gifW} × ${Math.round(parseInt(gifW, 10) / aspectMap[aspectRatio])} • ${gifFps} fps`}
-              </div>
-            </div>
-
-            <div className="modal-form">
-              {exportModalKind === 'png' && (
-                <div className="field-row">
-                  <span className="ctl-label">Resolution</span>
-                  <select value={imgRes} onChange={(e) => setImgRes(e.target.value)}>
-                    <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
-                    <option value="1440">{`${Math.round(1440 * aspectMap[aspectRatio])} × 1440`}</option>
-                    <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160`}</option>
-                  </select>
-                </div>
-              )}
-
-              {exportModalKind === 'video' && (
-                <>
-                  <div className="field-row">
-                    <span className="ctl-label">Resolution</span>
-                    <select value={vidRes} onChange={(e) => setVidRes(e.target.value)}>
-                      <option value="720">720p</option>
-                      <option value="1080">1080p</option>
-                      <option value="1440">1440p</option>
-                    </select>
-                  </div>
-                  <div className="field-row">
-                    <span className="ctl-label">Frame rate</span>
-                    <select value={vidFps} onChange={(e) => setVidFps(e.target.value)}>
-                      <option value="24">24 fps</option>
-                      <option value="30">30 fps</option>
-                      <option value="60">60 fps</option>
-                    </select>
-                  </div>
-                  <div className="field-row">
-                    <span className="ctl-label">Length</span>
-                    <select value={vidLen} onChange={(e) => setVidLen(e.target.value)}>
-                      <option value="l1">1 loop</option>
-                      <option value="l2">2 loops</option>
-                      <option value="l3">3 loops</option>
-                      <option value="l4">4 loops</option>
-                      <option value="l6">6 loops</option>
-                      <option value="l8">8 loops</option>
-                      <option value="s5">5 seconds</option>
-                      <option value="s10">10 seconds</option>
-                      <option value="s15">15 seconds</option>
-                      <option value="s30">30 seconds</option>
-                      <option value="s60">60 seconds</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {exportModalKind === 'gif' && (
-                <>
-                  <div className="field-row">
-                    <span className="ctl-label">Width</span>
-                    <select value={gifW} onChange={(e) => setGifW(e.target.value)}>
-                      <option value="360">360 px</option>
-                      <option value="480">480 px</option>
-                      <option value="640">640 px</option>
-                      <option value="800">800 px</option>
-                    </select>
-                  </div>
-                  <div className="field-row">
-                    <span className="ctl-label">Frame rate</span>
-                    <select value={gifFps} onChange={(e) => setGifFps(e.target.value)}>
-                      <option value="15">15 fps</option>
-                      <option value="20">20 fps</option>
-                      <option value="25">25 fps</option>
-                      <option value="30">30 fps</option>
-                    </select>
-                  </div>
-                  <div className="field-row">
-                    <span className="ctl-label">Dithering</span>
-                    <select value={gifDither ? 'true' : 'false'} onChange={(e) => setGifDither(e.target.value === 'true')}>
-                      <option value="true">Enabled</option>
-                      <option value="false">Disabled</option>
-                    </select>
-                  </div>
-                  <div className="field-row">
-                    <span className="ctl-label">Loop forever</span>
-                    <select value={gifLoop ? 'true' : 'false'} onChange={(e) => setGifLoop(e.target.value === 'true')}>
-                      <option value="true">Yes</option>
-                      <option value="false">No</option>
-                    </select>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="modal-actions">
-              <button 
-                className="btn btn-primary modal-dl"
-                onClick={() => {
-                  if (exportModalKind === 'png') executeExportPNG();
-                  if (exportModalKind === 'video') executeExportWebM();
-                  if (exportModalKind === 'gif') executeExportGIF();
-                }}
-              >
-                <svg viewBox="0 0 16 16" style={{ width: '14px', height: '14px', marginRight: '6px' }}><path d="M8 2 V10 M4.5 7 L8 10.5 L11.5 7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 13.5 H13" stroke="currentColor" stroke-width="1.6"/></svg>
-                Download {exportModalKind === 'png' ? 'PNG' : exportModalKind === 'video' ? 'WebM' : 'GIF'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Set Generator Modal mimicking lumenshaders */}
+      {/* 4. Set Generator Modal */}
       {setModalOpen && (
         <div className="modal-backdrop" onClick={() => setSetModalOpen(false)}>
           <div className="modal-content" style={{ width: 'min(90vw, 560px)' }} onClick={(e) => e.stopPropagation()}>
@@ -2257,26 +1573,6 @@ ${stylesObject}
         </div>
       )}
 
-      {/* Notifications toast */}
-      {notification && (
-        <div 
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            backgroundColor: '#121116',
-            border: '1px solid #7c3aed',
-            padding: '12px 20px',
-            borderRadius: '10px',
-            color: '#fff',
-            fontSize: '13px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
-            zIndex: 1000
-          }}
-        >
-          {notification}
-        </div>
-      )}
       {/* Exporter Progress Overlay */}
       {(recordingVideo || recordingGIF) && (
         <div className="modal-overlay" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2310,6 +1606,27 @@ ${stylesObject}
               Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Notifications toast */}
+      {notification && (
+        <div 
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            backgroundColor: '#121116',
+            border: '1px solid #7c3aed',
+            padding: '12px 20px',
+            borderRadius: '10px',
+            color: '#fff',
+            fontSize: '13px',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
+            zIndex: 1000
+          }}
+        >
+          {notification}
         </div>
       )}
     </div>
@@ -2412,20 +1729,3 @@ const ZipWriter = (function () {
   return { build: build };
 })();
 
-interface DiceIconProps {
-  size: number;
-}
-
-const DiceIcon: React.FC<DiceIconProps> = ({ size }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
-    <path d="M0 0h24v24H0z" fill="none" />
-    <path 
-      fill="none" 
-      stroke="currentColor" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      strokeWidth="1.5" 
-      d="M14.5 14.5c.12.069.384-.166.592-.525c.207-.358.278-.705.158-.774s-.384.166-.592.524c-.207.36-.278.706-.158.775m3.25 1.5c.12.069.384-.166.592-.525c.207-.358.278-.705.158-.774s-.384.166-.592.524c-.207.36-.278.706-.158.775M9.5 14.5c-.12.069-.384-.166-.592-.525c-.207-.358-.278-.705-.158-.774s.384.166.592.524c.207.36.278.706.158.775m0 3.25c-.12.069-.384-.166-.592-.525c-.207-.358-.278-.705-.158-.774s.384.166.592.524c.207.36.278.706.158.775M6.25 16c-.12.069-.384-.166-.592-.525c-.207-.358-.278-.705-.158-.774s.384.166.592.524c.207.36.278.706.158.775m0-3.201c-.12.07-.384-.166-.592-.524c-.207-.36-.278-.706-.158-.775s.384.166.592.525c.207.358.278.705.158.774m6.5-5.549a.75.25 0 0 1-.75.25a.75.25 0 0 1-.75-.25A.75.25 0 0 1 12 7a.75.25 0 0 1 .75.25M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"
-    />
-  </svg>
-);

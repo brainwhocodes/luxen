@@ -1534,5 +1534,81 @@ void main() {
   fragColor = vec4(lumenGrade(color, uv), 1.0);
 }
 `
+  },
+  {
+    id: "lumen-holo-dice",
+    name: "Holo Foil Dice",
+    category: "Lumen Borrowed",
+    description: "Iridescent holographic foil TTRPG dice simulation, featuring 3D wireframe raymarched faces.",
+    thumbnailUrl: "/thumbnails/lumen-holo-dice.png",
+    previewSnapshotUrl: "/thumbnails/lumen-holo-dice.png",
+    renderEngine: "webgl2",
+    tags: ["animated", "raymarch", "holo", "dice"],
+    useCases: ["Background visuals", "Holographic cards"],
+    defaultPalette: {
+      id: "p21",
+      name: "Iridescent",
+      stops: [
+        { id: "s1", color: "#f8f9fa", position: 0.0 },
+        { id: "s2", color: "#ff66cc", position: 0.25 },
+        { id: "s3", color: "#66ccff", position: 0.5 },
+        { id: "s4", color: "#ccff66", position: 0.75 },
+        { id: "s5", color: "#ff9966", position: 1.0 }
+      ],
+      interpolation: "smooth"
+    },
+    defaultParameters: [
+      { key: "seed", label: "Seed", type: "float", value: 1205, min: 0, max: 9999, step: 1, group: "Form", designerSafe: false },
+      { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true }
+    ],
+    shaderSource: `${glslNoiseHeader}
+// SPDX-License-Identifier: CC-BY-NC-SA-4.0
+// Copyright (c) 2026 @Jaenam
+//[LICENSE] https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+/*================================
+=         Holofoil Dice          =
+=         Author: Jaenam         =
+================================*/
+
+uniform vec3 u_mouse;
+uniform float u_seed;
+
+
+#define A(C, Z) \\
+for (float d, i, c, e, sc, h, a, s, sf; i++ < 80.;) { \\
+    vec3 p = vec3((I + I - r.xy) / r.y*d, d - 8.) * (1.1 / max(u_scale, 0.15)); vec3 g, f, k; \\
+    if (abs(p.x) > 5.) break; \\
+    p.xz *= Rx; \\
+    u_mouse.z > 0. ? p.yz *= Ry : p.xy *= Ry; \\
+    g = floor(p * 6.); \\
+    f = fract(p * 6.) - .5; \\
+    h = step(length(f), fract(sin(dot(g, vec3(127.1, 311.7, 74.7))) * 43758.5) * .3 + .1); \\
+    a = fract(sin(dot(g, vec3(43.7, 78.2, 123.4))) * 127.1) * 6.28; \\
+    e = 1., sc = 2.; \\
+    for (int j = 0; j < 3; j++) { \\
+        g = abs(mod(p * sc, 2.) - 1.); \\
+        e = min(e, min(max(g.x, g.y), min(max(g.y, g.z), max(g.x, g.z))) / sc); \\
+        sc *= .6; \\
+    } \\
+    c = max(max(max(abs(p.x), abs(p.y)), abs(p.z)), dot(abs(p), vec3(.577)) * .9) - 3.; \\
+    d += s = .01 + .15 * abs(max(max(c, e - .1),length(sin(c))-.3) + Z * .02 - i / 130.); \\
+    sf = smoothstep(.02, .01, s); \\
+    fragColor.C += 1.6 / s * (.5 + .5 * sin(i * .3 + Z * 5.) + sf * 4. * h * sin(a + i * .4 + Z * 5.));\\
+}
+
+void main() {
+    vec2 I = gl_FragCoord.xy;
+    vec3 r = vec3(u_resolution, 1.0);
+    vec2 m = u_mouse.z > 0. ? (-u_mouse.xy / r.xy - .5) * 6.28 : vec2(u_time / 2. + u_seed * 0.05);
+    mat2 Rx = mat2(cos(m.x + vec4(0, 33, 11, 0)));
+    mat2 Ry = mat2(cos(m.y + vec4(0, 33, 11, 0)));
+    fragColor = vec4(0.0);
+    
+    A(r, -1.)A(g, 0.)A(b, 1.)
+    fragColor = tanh(fragColor * fragColor / 1e7);
+    fragColor.a = 1.0;
+}
+`
   }
 ];
