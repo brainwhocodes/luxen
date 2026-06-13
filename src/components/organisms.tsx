@@ -345,6 +345,15 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
   palettePresets,
   handleApplyPalettePreset
 }) => {
+  const [activeTab, setActiveTab] = React.useState<string>('All');
+
+  const filteredPatterns = patterns.filter(p => {
+    if (activeTab === 'WebGL 2') return p.renderEngine === 'webgl2';
+    if (activeTab === 'CSS / Hybrid') return p.renderEngine === 'css' || p.renderEngine === 'hybrid';
+    if (activeTab === 'Interactive') return p.tags.includes('interactive') || p.id === 'lumen-scroll-wave';
+    return true;
+  });
+
   const renderParam = (param: EditorParameter) => {
     const isReededLines = selectedPattern.id === 'lumen-reeded-glass' && param.key === 'lines';
     const labelText = isReededLines ? 'Ridges / Zoom' : param.label;
@@ -391,8 +400,19 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
         {/* 1. Patterns Grid */}
         <div className="section-group">
           <div className="group-header">Patterns</div>
+          <div className="patterns-tabs">
+            {['All', 'WebGL 2', 'CSS / Hybrid', 'Interactive'].map(tab => (
+              <button
+                key={tab}
+                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
           <div className="patterns-grid">
-            {patterns.map(p => (
+            {filteredPatterns.map(p => (
               <PatternCard 
                 key={p.id}
                 pattern={p}

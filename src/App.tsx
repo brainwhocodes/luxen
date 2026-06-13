@@ -328,7 +328,10 @@ export default function App() {
       setParameters(mergedParams);
       setPalette(parsed.palette);
       let codeToLoad = parsed.codeSource;
-      if (pattern.id === 'lumen-holo-dice' && (codeToLoad.includes('A(C, Z)') || codeToLoad.includes('#define A('))) {
+      if (pattern.id === 'lumen-holo-dice' && !codeToLoad.includes('u_original')) {
+        codeToLoad = pattern.shaderSource ?? '';
+      }
+      if (pattern.id === 'lumen-scroll-wave' && !codeToLoad.includes('vec2(u_time')) {
         codeToLoad = pattern.shaderSource ?? '';
       }
       setCodeSource(codeToLoad);
@@ -418,6 +421,40 @@ export default function App() {
       }
     }
   }, []);
+
+  // --- Interactive Scroll/Wheel Uniform Listener ---
+  useEffect(() => {
+    const hasScroll = selectedPattern.defaultParameters.some(p => p.key === 'scroll');
+    if (!hasScroll) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const isOverPanel = (e.target as HTMLElement)?.closest('.panel-body');
+      const isOverCode = (e.target as HTMLElement)?.closest('.cm-editor');
+      if (isOverPanel || isOverCode) return;
+
+      e.preventDefault();
+      
+      setParameters(prev =>
+        prev.map(p => {
+          if (p.key === 'scroll') {
+            const nextVal = Math.max(0.0, Math.min(1.0, Number(p.value) + e.deltaY * 0.0015));
+            return { ...p, value: nextVal };
+          }
+          return p;
+        })
+      );
+    };
+
+    const target = document.querySelector('.editor-layout');
+    if (target) {
+      target.addEventListener('wheel', handleWheel as any, { passive: false });
+    }
+    return () => {
+      if (target) {
+        target.removeEventListener('wheel', handleWheel as any);
+      }
+    };
+  }, [selectedPattern]);
 
   // --- WebGL 2 Setup and Render Loop ---
   useEffect(() => {

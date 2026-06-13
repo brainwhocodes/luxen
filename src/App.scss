@@ -528,6 +528,39 @@ textarea {
     font-weight: 650;
   }
 
+  .patterns-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 8px;
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: $text-muted;
+      padding: 5px 9px;
+      font-size: 11px;
+      font-family: $mono-font-stack;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: $text-primary;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      &.active {
+        color: #fff;
+        background: rgba(124, 58, 237, 0.15);
+        border-color: rgba(124, 58, 237, 0.4);
+        box-shadow: 0 0 10px rgba(124, 58, 237, 0.1);
+      }
+    }
+  }
+
   .patterns-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
