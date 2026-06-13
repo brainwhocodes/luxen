@@ -1,8 +1,17 @@
 import type { CSSProperties, Dispatch, KeyboardEvent, MouseEvent, RefObject, SetStateAction, TouchEvent } from 'react';
 
 import type { EditorParameter, GradientPalette, PreviewSettings, ShaderPattern } from '../../types';
-import { Header, PreviewStage, ParametersPanel, ExportModal, SettingsModal, CodeModal } from '../organisms';
-import { ExportProgressOverlay, NotificationToast, SetGeneratorModal } from '../organismsExtra';
+import { 
+  Header, 
+  PreviewStage, 
+  ParametersPanel, 
+  ExportModal, 
+  SettingsModal, 
+  CodeModal,
+  ExportProgressOverlay,
+  NotificationToast,
+  SetGeneratorModal 
+} from '../organisms';
 
 type ExportType = 'code' | 'image' | 'react' | 'css-export';
 type ExportModalKind = 'png' | 'video' | 'gif' | null;
