@@ -51,8 +51,8 @@ void main() {
   vec2 grid = vec2(cells * aspect, cells);
   vec2 quantized = (floor(uv * grid) + 0.5) / grid;
   vec3 color = lumenBlobField(lumenP(quantized), u_warp * 0.5);
-  float tileHash = hash(floor(uv * grid) + vec2(u_seed, u_time));
-  color *= 0.96 + 0.08 * tileHash;
+  float tileHash = lumenHash21(floor(uv * grid) + u_seed);
+  color *= 0.97 + 0.05 * tileHash;
   color = mix(color, getPaletteColor(0.95), u_glow * 0.08);
 
   fragColor = vec4(lumenGrade(color, uv), 1.0);

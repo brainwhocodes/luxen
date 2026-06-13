@@ -179,7 +179,7 @@ vec2 lumenLoop() {
 }
 
 vec2 lumenSeedOffset() {
-  return vec2(hash(vec2(u_seed * 0.137, 0.731)) * 61.7, hash(vec2(u_seed * 0.213, 7.0)) * 47.3);
+  return vec2(lumenHash11(u_seed * 0.137 + 0.731) * 61.7, lumenHash11(u_seed * 0.213 + 7.0) * 47.3);
 }
 
 vec2 lumenP(vec2 uv) {
@@ -211,7 +211,10 @@ vec3 lumenGrade(vec3 color, vec2 uv) {
 
   float vignette = smoothstep(0.92, 0.16, length(uv - 0.5));
   color *= mix(1.0, vignette, clamp(u_vig, 0.0, 1.0));
-  color += (hash(uv * u_resolution.xy + vec2(u_seed, u_time)) - 0.5) * u_grain;
+
+  float gstep = floor(lumenPhase() * 12.0);
+  float gr = lumenHash21(gl_FragCoord.xy * 0.71 + vec2(gstep * 3.1, gstep * 7.7));
+  color += (gr - 0.5) * u_grain * 0.55;
   return max(color, vec3(0.0));
 }
 
