@@ -125,15 +125,48 @@ mat2 lumenRot(float a) {
 }
 
 float lumenHash11(float n) {
-  return fract(sin(n * 127.1 + u_seed * 0.013) * 43758.5453123);
+  n = fract(n * 0.1031);
+  n *= n + 33.33;
+  n *= n + n;
+  return fract(n);
+}
+
+float lumenHash21(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
 }
 
 vec2 lumenHash22(vec2 p) {
-  return vec2(hash(p + u_seed * 0.011), hash(p + vec2(17.13, 31.71) + u_seed * 0.017));
+  float n = lumenHash21(p);
+  return vec2(n, lumenHash21(p + n + 17.13));
+}
+
+float lumenVnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = lumenHash21(i);
+  float b = lumenHash21(i + vec2(1.0, 0.0));
+  float c = lumenHash21(i + vec2(0.0, 1.0));
+  float d = lumenHash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
 float lumenFbm(vec2 p) {
-  return fbm(p, int(clamp(floor(u_complex + 0.5), 1.0, 8.0)));
+  float v = 0.0;
+  float a = 0.5;
+  float tot = 0.0;
+  mat2 R = lumenRot(0.62);
+  for (int i = 0; i < 8; i++) {
+    float w = clamp(u_complex - float(i), 0.0, 1.0);
+    if (w <= 0.0) break;
+    v += a * w * lumenVnoise(p);
+    tot += a * w;
+    a *= 0.55;
+    p = R * p * 2.03 + 11.7;
+  }
+  return v / max(tot, 1e-4);
 }
 
 float lumenPhase() {
