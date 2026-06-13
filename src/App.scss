@@ -1124,7 +1124,8 @@ textarea {
 }
 
 .modal-card {
-  width: min(560px, 100%);
+  width: 560px;
+  max-width: 100%;
   max-height: 88vh;
   overflow-y: auto;
   background: rgba(20, 20, 25, 0.94);
@@ -1218,8 +1219,8 @@ textarea {
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  margin-bottom: 14px;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
 .modal-actions {
@@ -1233,10 +1234,20 @@ textarea {
   font-size: 13px;
 }
 
-.ctl-label {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: #a1a1aa;
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+
+  .ctl-label {
+    flex: 1;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #a1a1aa;
+    text-align: left;
+  }
 }
 
 /* Custom Scrollbar Styles */
@@ -1291,4 +1302,48 @@ select {
   &:focus {
     border-color: $accent-violet;
   }
+}
+
+/* Set Generator Grid */
+.set-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.set-tile {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  cursor: pointer;
+  background: #000;
+  transition: transform 180ms cubic-bezier(.34, 1.56, .64, 1), border-color 160ms ease, box-shadow 160ms ease;
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  &:hover {
+    transform: scale(1.045);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+  }
+}
+
+.set-tile-label {
+  position: absolute;
+  left: 6px;
+  bottom: 5px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(8, 8, 12, 0.55);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-family: monospace;
 }

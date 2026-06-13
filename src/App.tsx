@@ -299,6 +299,10 @@ export default function App() {
     '4:5': 0.8,
     '21:9': 21 / 9
   };
+  const seeds = useMemo(() => {
+    const originalSeed = parameters.find(p => p.key === 'seed')?.value as number || 0;
+    return setSeeds(Math.round(originalSeed), setCount);
+  }, [parameters, setCount]);
   // Filter and classify parameters
   const visibleParams = parameters.filter(p => {
     if (selectedPattern.id === 'lumen-reeded-glass' && p.key === 'scale') {
@@ -372,6 +376,7 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const glRef = useRef<WebGL2RenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
+  const vaoRef = useRef<WebGLVertexArrayObject | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const timeRef = useRef<number>(0);
@@ -595,6 +600,7 @@ export default function App() {
       if (programRef.current) {
         const positionAttributeLocation = gl.getAttribLocation(programRef.current, 'position');
         vao = gl.createVertexArray();
+        vaoRef.current = vao;
         gl.bindVertexArray(vao);
         gl.enableVertexAttribArray(positionAttributeLocation);
         gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
@@ -756,6 +762,108 @@ export default function App() {
       clearTimeout(timer);
     };
   }, [exportModalKind]);
+
+  // Render the set preview tiles sequentially whenever the set modal is opened
+  useEffect(() => {
+    if (!setModalOpen) return;
+    
+    let active = true;
+    const drawSetTiles = async () => {
+      const mainCanvas = canvasRef.current;
+      if (!mainCanvas || !active) return;
+      
+      const gl = glRef.current;
+      const program = programRef.current;
+      const vao = vaoRef.current;
+      
+      const ar = aspectMap[aspectRatio];
+      const tiles = document.querySelectorAll('.set-grid .set-tile canvas');
+      if (tiles.length === 0) return;
+      
+      if (selectedPattern.renderEngine !== 'css' && gl && program && vao) {
+        const prevW = mainCanvas.width;
+        const prevH = mainCanvas.height;
+        
+        mainCanvas.width = 320;
+        mainCanvas.height = Math.round(320 / ar);
+        gl.viewport(0, 0, mainCanvas.width, mainCanvas.height);
+        
+        gl.useProgram(program);
+        gl.bindVertexArray(vao);
+        
+        const colors: number[] = [];
+        palette.stops.forEach(s => {
+          const hex = s.color.replace('#', '');
+          colors.push(
+            parseInt(hex.slice(0, 2), 16) / 255,
+            parseInt(hex.slice(2, 4), 16) / 255,
+            parseInt(hex.slice(4, 6), 16) / 255
+          );
+        });
+        while (colors.length < 24) {
+          colors.push(colors[colors.length - 3], colors[colors.length - 2], colors[colors.length - 1]);
+        }
+        gl.uniform3fv(gl.getUniformLocation(program, 'u_colors[0]') || gl.getUniformLocation(program, 'u_colors'), new Float32Array(colors));
+        gl.uniform1i(gl.getUniformLocation(program, 'u_colors_count'), palette.stops.length);
+        
+        gl.uniform2f(gl.getUniformLocation(program, 'u_resolution'), mainCanvas.width, mainCanvas.height);
+        gl.uniform1f(gl.getUniformLocation(program, 'u_time'), 0.3);
+
+        for (let i = 0; i < seeds.length; i++) {
+          if (!active) break;
+          
+          parameters.forEach(p => {
+            const loc = gl.getUniformLocation(program, 'u_' + p.key);
+            if (loc) {
+              gl.uniform1f(loc, p.key === 'seed' ? seeds[i] : Number(p.value));
+            }
+          });
+          
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          
+          const tileCanvas = document.getElementById(`set-tile-canvas-${i}`) as HTMLCanvasElement;
+          if (tileCanvas) {
+            tileCanvas.width = 320;
+            tileCanvas.height = Math.round(320 / ar);
+            const ctx = tileCanvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(mainCanvas, 0, 0, tileCanvas.width, tileCanvas.height);
+            }
+          }
+          
+          await new Promise<void>((resolve) => setTimeout(resolve, 10));
+        }
+        
+        mainCanvas.width = prevW;
+        mainCanvas.height = prevH;
+        gl.viewport(0, 0, prevW, prevH);
+      } else if (selectedPattern.renderEngine === 'css' && selectedPattern.unsplashUrl) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = selectedPattern.unsplashUrl;
+        img.onload = () => {
+          if (!active) return;
+          for (let i = 0; i < seeds.length; i++) {
+            const tileCanvas = document.getElementById(`set-tile-canvas-${i}`) as HTMLCanvasElement;
+            if (tileCanvas) {
+              tileCanvas.width = 320;
+              tileCanvas.height = Math.round(320 / ar);
+              const ctx = tileCanvas.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(img, 0, 0, tileCanvas.width, tileCanvas.height);
+              }
+            }
+          }
+        };
+      }
+    };
+    
+    drawSetTiles();
+    
+    return () => {
+      active = false;
+    };
+  }, [setModalOpen, setCount, selectedPattern, palette, parameters]);
 
   // --- Parameter visual changes ---
   const handleParameterChange = (key: string, value: number | boolean) => {
@@ -947,14 +1055,6 @@ export default function App() {
     showToast("Randomized all parameters!");
   };
 
-  const setSeeds = (base: number, n: number): number[] => {
-    const seeds: number[] = [];
-    for (let i = 0; i < n; i++) {
-      seeds.push((base + 73 + i * 911) % 10000);
-    }
-    return seeds;
-  };
-
   const handleDownloadSet = async () => {
     setSetModalOpen(false);
     
@@ -980,24 +1080,26 @@ export default function App() {
     canvas.width = w;
     canvas.height = h;
 
-    const seeds = setSeeds(Math.round(originalSeed), setCount);
-    for (let i = 0; i < seeds.length; i++) {
+    const seedsList = seeds;
+    const entries: { name: string; data: Uint8Array }[] = [];
+
+    for (let i = 0; i < seedsList.length; i++) {
       if (!recordingVideo && !recordingGIF) {
         break;
       }
-      setRecordProgress(((i) / seeds.length) * 100);
-      setExportingDetail(`rendering ${i + 1}/${seeds.length} • seed ${seeds[i]} • ${w}×${h}`);
+      setRecordProgress(((i) / seedsList.length) * 100);
+      setExportingDetail(`rendering ${i + 1}/${seedsList.length} • seed ${seedsList[i]} • ${w}×${h}`);
 
       await new Promise<void>((resolve) => {
-        setParameters(prev => prev.map(p => p.key === 'seed' ? { ...p, value: seeds[i] } : p));
-        setTimeout(() => {
-          canvas.toBlob((blob) => {
+        setParameters(prev => prev.map(p => p.key === 'seed' ? { ...p, value: seedsList[i] } : p));
+        setTimeout(async () => {
+          canvas.toBlob(async (blob) => {
             if (blob) {
-              const link = document.createElement('a');
-              link.href = URL.createObjectURL(blob);
-              link.download = `lumen-set-${i+1}-seed${String(seeds[i]).padStart(4, '0')}.png`;
-              link.click();
-              setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+              const arrayBuffer = await blob.arrayBuffer();
+              entries.push({
+                name: `lumen-set-${String(i + 1).padStart(2, '0')}-seed${String(seedsList[i]).padStart(4, '0')}.png`,
+                data: new Uint8Array(arrayBuffer)
+              });
             }
             resolve();
           }, 'image/png');
@@ -1009,7 +1111,18 @@ export default function App() {
     canvas.width = prevW;
     canvas.height = prevH;
     setRecordingVideo(false);
-    showToast(`Downloaded set of ${setCount} variations successfully!`);
+
+    if (entries.length > 0) {
+      const zipBlob = ZipWriter.build(entries);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `lumen-set-${selectedPattern.id}.zip`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+      showToast(`Set of ${entries.length} variations saved!`);
+    } else {
+      showToast("Set export cancelled / failed.");
+    }
   };
 
   // --- Gradient stops editing actions ---
@@ -2126,6 +2239,23 @@ ${stylesObject}
               </div>
             </div>
 
+            <div className="set-grid">
+              {seeds.map((seed, idx) => (
+                <button
+                  key={idx}
+                  className="set-tile"
+                  onClick={() => {
+                    handleParameterChange('seed', seed);
+                    setSetModalOpen(false);
+                    showToast(`Applied seed ${seed}`);
+                  }}
+                >
+                  <canvas id={`set-tile-canvas-${idx}`} />
+                  <span className="set-tile-label mono">#{String(seed).padStart(4, '0')}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setSetModalOpen(false)} style={{ marginRight: '8px' }}>
                 Cancel
@@ -2197,3 +2327,99 @@ ${stylesObject}
     </div>
   );
 }
+
+function setSeeds(base: number, n: number): number[] {
+  const seeds: number[] = [];
+  for (let i = 0; i < n; i++) {
+    seeds.push((base + 73 + i * 911) % 10000);
+  }
+  return seeds;
+}
+
+const ZipWriter = (function () {
+  const CRC_TABLE = (function () {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(buf: Uint8Array) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) {
+      c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function dosDateTime() {
+    const d = new Date();
+    const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    return { time: time, date: date };
+  }
+
+  function build(entries: { name: string; data: Uint8Array }[]) {
+    const parts: any[] = [];
+    const central: any[] = [];
+    let offset = 0;
+    const dt = dosDateTime();
+
+    entries.forEach(function (e) {
+      const nameBytes = new TextEncoder().encode(e.name);
+      const crc = crc32(e.data);
+      const local = new Uint8Array(30 + nameBytes.length);
+      const v = new DataView(local.buffer);
+      v.setUint32(0, 0x04034b50, true);
+      v.setUint16(4, 20, true);
+      v.setUint16(6, 0x0800, true);
+      v.setUint16(8, 0, true);
+      v.setUint16(10, dt.time, true);
+      v.setUint16(12, dt.date, true);
+      v.setUint32(14, crc, true);
+      v.setUint32(18, e.data.length, true);
+      v.setUint32(22, e.data.length, true);
+      v.setUint16(26, nameBytes.length, true);
+      v.setUint16(28, 0, true);
+      local.set(nameBytes, 30);
+      parts.push(local, e.data);
+
+      const cd = new Uint8Array(46 + nameBytes.length);
+      const c = new DataView(cd.buffer);
+      c.setUint32(0, 0x02014b50, true);
+      c.setUint16(4, 20, true);
+      c.setUint16(6, 20, true);
+      c.setUint16(8, 0x0800, true);
+      c.setUint16(10, 0, true);
+      c.setUint16(12, dt.time, true);
+      c.setUint16(14, dt.date, true);
+      c.setUint32(16, crc, true);
+      c.setUint32(20, e.data.length, true);
+      c.setUint32(24, e.data.length, true);
+      c.setUint16(28, nameBytes.length, true);
+      c.setUint32(42, offset, true);
+      cd.set(nameBytes, 46);
+      central.push(cd);
+
+      offset += local.length + e.data.length;
+    });
+
+    let cdSize = 0;
+    central.forEach(function (c) { cdSize += c.length; });
+
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, entries.length, true);
+    ev.setUint16(10, entries.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+
+    return new Blob(parts.concat(central, [end]), { type: "application/zip" });
+  }
+
+  return { build: build };
+})();
