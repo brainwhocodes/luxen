@@ -350,7 +350,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
   const filteredPatterns = patterns.filter(p => {
     if (activeTab === 'WebGL 2') return p.renderEngine === 'webgl2';
     if (activeTab === 'CSS / Hybrid') return p.renderEngine === 'css' || p.renderEngine === 'hybrid';
-    if (activeTab === 'Interactive') return p.tags.includes('interactive') || p.id === 'lumen-scroll-wave';
+    if (activeTab === 'Animated') return p.tags.includes('animated');
     return true;
   });
 
@@ -401,7 +401,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
         <div className="section-group">
           <div className="group-header">Patterns</div>
           <div className="patterns-tabs">
-            {['All', 'WebGL 2', 'CSS / Hybrid', 'Interactive'].map(tab => (
+            {['All', 'WebGL 2', 'CSS / Hybrid', 'Animated'].map(tab => (
               <button
                 key={tab}
                 className={`tab-btn ${activeTab === tab ? 'active' : ''}`}

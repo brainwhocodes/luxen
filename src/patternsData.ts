@@ -1652,63 +1652,143 @@ void main() {
   },
   {
     id: "lumen-scroll-wave",
-    name: "Scroll Wave Grid",
-    category: "Lumen Borrowed",
-    description: "Scroll-responsive grid distortion inspired by Faboolea's shaders-on-scroll. Drag scroll slider or use mouse wheel to distort.",
-    thumbnailUrl: "/thumbnails/lumen-silk-ribbons.png",
-    previewSnapshotUrl: "/thumbnails/lumen-silk-ribbons.png",
+    name: "Shaders on Scroll",
+    category: "Animated Shaders",
+    description: "Faboolea-inspired scroll-reactive icosahedron wireframe: noisy vertex displacement, additive purple glow, and scroll-driven rotation.",
+    thumbnailUrl: "/thumbnails/shaders-on-scroll.png",
+    previewSnapshotUrl: "/thumbnails/shaders-on-scroll.png",
     renderEngine: "webgl2",
-    tags: ["animated", "interactive", "scroll"],
-    useCases: ["Portfolio hero", "Organic waves"],
+    tags: ["animated", "interactive", "scroll", "wireframe"],
+    useCases: ["Portfolio hero", "Scroll-reactive WebGL stage"],
     defaultPalette: {
       id: "p-scroll-1",
-      name: "Deep Purple",
+      name: "Faboolea Purple",
       stops: [
-        { id: "s1", color: "#0d0b21", position: 0.0 },
-        { id: "s2", color: "#3a1c71", position: 0.3 },
-        { id: "s3", color: "#d76d77", position: 0.6 },
-        { id: "s4", color: "#ffaf7b", position: 1.0 }
+        { id: "s1", color: "#1a0f4f", position: 0.0 },
+        { id: "s2", color: "#4f46e5", position: 0.35 },
+        { id: "s3", color: "#8b5cf6", position: 0.7 },
+        { id: "s4", color: "#f0abfc", position: 1.0 }
       ],
       interpolation: "smooth"
     },
     defaultParameters: [
       { key: "seed", label: "Seed", type: "float", value: 42, min: 0, max: 9999, step: 1, group: "Form", designerSafe: false },
-      { key: "scale", label: "Zoom", type: "float", value: 1.2, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true },
-      { key: "scroll", label: "Scroll Progress", type: "float", value: 0.5, min: 0.0, max: 1.0, step: 0.01, group: "Form", designerSafe: true },
-      { key: "frequency", label: "Wave Frequency", type: "float", value: 12.0, min: 2.0, max: 30.0, step: 0.1, group: "Form", designerSafe: true },
-      { key: "amplitude", label: "Wave Amplitude", type: "float", value: 1.5, min: 0.0, max: 5.0, step: 0.05, group: "Form", designerSafe: true }
+      { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.65, max: 1.7, step: 0.01, group: "Form", designerSafe: true },
+      { key: "scroll", label: "Scroll Progress", type: "float", value: 0.0, min: 0.0, max: 1.0, step: 0.01, group: "Form", designerSafe: true },
+      { key: "frequency", label: "Frequency", type: "float", value: 4.0, min: 0.0, max: 8.0, step: 0.05, group: "Form", designerSafe: true },
+      { key: "amplitude", label: "Amplitude", type: "float", value: 4.0, min: 0.0, max: 6.0, step: 0.05, group: "Form", designerSafe: true },
+      { key: "density", label: "Density", type: "float", value: 1.0, min: 0.2, max: 4.0, step: 0.05, group: "Texture", designerSafe: true },
+      { key: "strength", label: "Strength", type: "float", value: 1.1, min: 0.0, max: 2.0, step: 0.01, group: "Texture", designerSafe: true },
+      { key: "deep_purple", label: "Deep Purple", type: "float", value: 1.0, min: 0.0, max: 1.0, step: 0.01, group: "Lighting", designerSafe: true },
+      { key: "opacity", label: "Opacity", type: "float", value: 0.66, min: 0.05, max: 1.0, step: 0.01, group: "Lighting", designerSafe: true }
     ],
     shaderSource: `${glslNoiseHeader}
-// Inspired by Faboolea/shaders-on-scroll
+// Fragment-stage adaptation of Faboolea/shaders-on-scroll.
+// Original project: Three.js IcosahedronGeometry wireframe with noisy vertex displacement.
 uniform float u_seed;
 uniform float u_scroll;
 uniform float u_frequency;
 uniform float u_amplitude;
+uniform float u_density;
+uniform float u_strength;
+uniform float u_deep_purple;
+uniform float u_opacity;
+
+mat3 rotateX(float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return mat3(1.0, 0.0, 0.0, 0.0, c, -s, 0.0, s, c);
+}
+
+mat3 rotateY(float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
+}
+
+vec3 cosPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+  return a + b * cos(6.28318 * (c * t + d));
+}
+
+vec3 icoVertex(int id) {
+  float p = 1.61803398875;
+  if (id == 0) return normalize(vec3(0.0, 1.0, p));
+  if (id == 1) return normalize(vec3(0.0, -1.0, p));
+  if (id == 2) return normalize(vec3(0.0, 1.0, -p));
+  if (id == 3) return normalize(vec3(0.0, -1.0, -p));
+  if (id == 4) return normalize(vec3(1.0, p, 0.0));
+  if (id == 5) return normalize(vec3(-1.0, p, 0.0));
+  if (id == 6) return normalize(vec3(1.0, -p, 0.0));
+  if (id == 7) return normalize(vec3(-1.0, -p, 0.0));
+  if (id == 8) return normalize(vec3(p, 0.0, 1.0));
+  if (id == 9) return normalize(vec3(-p, 0.0, 1.0));
+  if (id == 10) return normalize(vec3(p, 0.0, -1.0));
+  return normalize(vec3(-p, 0.0, -1.0));
+}
+
+vec3 displaceVertex(vec3 v, float scrollAmount) {
+  float effectiveFrequency = u_frequency * scrollAmount;
+  float effectiveStrength = u_strength * scrollAmount;
+  float distortion = (noise(v.xy * u_density + vec2(u_seed * 0.017, v.z * 2.0 + u_time * 0.08)) * 2.0 - 1.0) * effectiveStrength;
+  vec3 p = v + normalize(v) * distortion * 0.28;
+  float angle = sin(v.y * effectiveFrequency) * u_amplitude * 0.25 * scrollAmount;
+  p = rotateY(angle) * p;
+  p = rotateX(scrollAmount * 3.14159265) * p;
+  p = rotateY(u_time * 0.05 + u_seed * 0.001) * p;
+  return p;
+}
+
+vec2 projectPoint(vec3 p) {
+  float depth = p.z + 3.1;
+  return p.xy / depth * 2.0 * u_scale;
+}
+
+float segmentDistance(vec2 p, vec2 a, vec2 b) {
+  vec2 pa = p - a;
+  vec2 ba = b - a;
+  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.0001), 0.0, 1.0);
+  return length(pa - ba * h);
+}
 
 void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution;
-    
-    // Simplex noise base
-    float n = noise(uv * u_scale + vec2(u_time * u_speed * 0.1 + u_seed * 0.01));
-    
-    // Wave displacement calculations driven by scroll uniform and frequency/amplitude
-    float waveX = sin(uv.y * u_frequency + u_time * u_speed * 0.5 + u_scroll * 6.28) * u_amplitude * 0.05;
-    float waveY = cos(uv.x * u_frequency + u_time * u_speed * 0.5 + u_scroll * 6.28) * u_amplitude * 0.05;
-    
-    vec2 distortedUv = uv + vec2(waveX, waveY) + n * 0.02;
-    
-    // Get colors from custom gradient palette
-    vec3 col = getPaletteColor(distortedUv.x * 0.5 + distortedUv.y * 0.5 + n * 0.1);
-    
-    // Wireframe grid lines overlay resembling plane meshes
-    float linesX = sin(distortedUv.x * 30.0) * 0.5 + 0.5;
-    float linesY = sin(distortedUv.y * 30.0) * 0.5 + 0.5;
-    float grid = min(smoothstep(0.0, 0.08, linesX), smoothstep(0.0, 0.08, linesY));
-    
-    // Blend background with glowing displaced grid mesh
-    vec3 finalColor = mix(col * 0.15, col * 1.6, 1.0 - grid);
-    
-    fragColor = vec4(finalColor, 1.0);
+  vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+  float scrollAmount = clamp(u_scroll, 0.0, 1.0);
+  float lineMask = 0.0;
+  float glowMask = 0.0;
+  float distortionMix = 0.0;
+
+  for (int i = 0; i < 12; i++) {
+    for (int j = 0; j < 12; j++) {
+      if (j <= i) continue;
+      vec3 rawA = icoVertex(i);
+      vec3 rawB = icoVertex(j);
+      if (distance(rawA, rawB) > 1.08) continue;
+
+      vec3 a3 = displaceVertex(rawA, scrollAmount);
+      vec3 b3 = displaceVertex(rawB, scrollAmount);
+      vec2 a = projectPoint(a3);
+      vec2 b = projectPoint(b3);
+
+      float d = segmentDistance(p, a, b);
+      float width = mix(0.0045, 0.0075, scrollAmount);
+      lineMask += smoothstep(width * 1.8, width, d);
+      glowMask += exp(-d * 44.0) * 0.08;
+      distortionMix += abs(a3.z - b3.z) * 0.015;
+    }
+  }
+
+  float visibleWire = clamp(lineMask, 0.0, 1.0);
+  float visibleGlow = clamp(glowMask, 0.0, 1.0);
+  vec3 brightness = vec3(0.1, 0.1, 0.9);
+  vec3 contrast = vec3(0.3, 0.3, 0.3);
+  vec3 oscillation = vec3(0.5, 0.5, 0.9);
+  vec3 phase = vec3(0.9, 0.1, 0.8);
+  vec3 wireColor = cosPalette(distortionMix + scrollAmount * 0.45, brightness, contrast, oscillation, phase);
+  wireColor += vec3(min(u_deep_purple * (1.0 - scrollAmount), 1.0), 0.0, 0.5) * 0.8;
+
+  vec3 bg = vec3(0.015, 0.0, 0.045) + getPaletteColor(scrollAmount) * 0.035;
+  vec3 finalColor = bg + wireColor * (visibleWire * min(u_opacity, 1.0) + visibleGlow);
+  fragColor = vec4(finalColor, 1.0);
 }
 `
   }

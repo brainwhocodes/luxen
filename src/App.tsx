@@ -427,13 +427,15 @@ export default function App() {
     const hasScroll = selectedPattern.defaultParameters.some(p => p.key === 'scroll');
     if (!hasScroll) return;
 
-    const handleWheel = (e: WheelEvent) => {
-      const isOverPanel = (e.target as HTMLElement)?.closest('.panel-body');
-      const isOverCode = (e.target as HTMLElement)?.closest('.cm-editor');
+    const handleWheel: EventListener = (event) => {
+      const e = event as WheelEvent;
+      const targetElement = e.target instanceof HTMLElement ? e.target : null;
+      const isOverPanel = targetElement?.closest('.panel-body');
+      const isOverCode = targetElement?.closest('.cm-editor');
       if (isOverPanel || isOverCode) return;
 
       e.preventDefault();
-      
+
       setParameters(prev =>
         prev.map(p => {
           if (p.key === 'scroll') {
@@ -447,11 +449,11 @@ export default function App() {
 
     const target = document.querySelector('.editor-layout');
     if (target) {
-      target.addEventListener('wheel', handleWheel as any, { passive: false });
+      target.addEventListener('wheel', handleWheel, { passive: false });
     }
     return () => {
       if (target) {
-        target.removeEventListener('wheel', handleWheel as any);
+        target.removeEventListener('wheel', handleWheel);
       }
     };
   }, [selectedPattern]);
