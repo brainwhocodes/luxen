@@ -28,7 +28,7 @@ export const lumenHoloDicePattern: ShaderPattern = {
       { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true },
       { key: "sides", label: "Glitter Pattern", type: "float", value: 6.0, min: 2.0, max: 12.0, step: 1.0, group: "Form", designerSafe: true },
       { key: "shape", label: "Shape", type: "float", value: 0.9, min: 0.0, max: 1.5, step: 0.05, group: "Form", designerSafe: true },
-      { key: "original", label: "Use Original Colors", type: "float", value: 0.0, min: 0.0, max: 1.0, step: 1.0, group: "Form", designerSafe: true }
+      { key: "original", label: "Use Original Colors", type: "boolean", value: false, min: 0.0, max: 1.0, step: 1.0, group: "Form", designerSafe: true }
     ],
     shaderSource: `${glslNoiseHeader}
 // SPDX-License-Identifier: CC-BY-NC-SA-4.0

@@ -575,7 +575,7 @@ export function ShaderEditorPage() {
             if (typeof param.value === 'number') {
               currentGl.uniform1f(loc, param.value);
             } else if (typeof param.value === 'boolean') {
-              currentGl.uniform1i(loc, param.value ? 1 : 0);
+              currentGl.uniform1f(loc, param.value ? 1.0 : 0.0);
             }
           }
         });

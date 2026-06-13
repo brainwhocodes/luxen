@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs, Dialog } from '@base-ui/react';
+import { Tabs, Dialog, Switch } from '@base-ui/react';
 import { 
   SaveIcon, 
   SettingsIcon, 
@@ -314,7 +314,7 @@ interface ParametersPanelProps {
   regularParams: EditorParameter[];
   lightingParams: EditorParameter[];
   textureParams: EditorParameter[];
-  handleParameterChange: (key: string, val: number) => void;
+  handleParameterChange: (key: string, val: number | boolean) => void;
   handleRandomizePalette: () => void;
   handleAddStop: () => void;
   handleRemoveStop: (id: string) => void;
@@ -371,6 +371,20 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
           onChange={(val) => handleParameterChange('seed', val)}
           onRoll={() => handleParameterChange('seed', Math.floor(Math.random() * 10000))}
         />
+      );
+    }
+    if (param.type === 'boolean') {
+      return (
+        <div className="control-row-toggle" key={param.key}>
+          <span className="name">{labelText}</span>
+          <Switch.Root
+            checked={Boolean(param.value)}
+            onCheckedChange={(checked) => handleParameterChange(param.key, checked)}
+            className="base-switch"
+          >
+            <Switch.Thumb className="base-switch-thumb" />
+          </Switch.Root>
+        </div>
       );
     }
 
