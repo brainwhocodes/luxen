@@ -751,22 +751,19 @@ textarea {
 
   .remove-stop-btn {
     position: absolute;
-    top: -5px;
-    right: -5px;
-    width: 14px;
-    height: 14px;
+    inset: 0;
     padding: 0;
     border: 0;
-    border-radius: 50%;
-    background-color: #ef4444;
+    border-radius: inherit;
+    background-color: rgba(239, 68, 68, 0.85);
     color: #ffffff;
     cursor: pointer;
-    font-size: 10px;
-    line-height: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     opacity: 0;
     transition: opacity 120ms ease;
   }
