@@ -1559,7 +1559,9 @@ void main() {
     },
     defaultParameters: [
       { key: "seed", label: "Seed", type: "float", value: 1205, min: 0, max: 9999, step: 1, group: "Form", designerSafe: false },
-      { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true }
+      { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true },
+      { key: "sides", label: "Glitter Pattern", type: "float", value: 6.0, min: 2.0, max: 12.0, step: 1.0, group: "Form", designerSafe: true },
+      { key: "shape", label: "Shape", type: "float", value: 0.9, min: 0.0, max: 1.5, step: 0.05, group: "Form", designerSafe: true }
     ],
     shaderSource: `${glslNoiseHeader}
 // SPDX-License-Identifier: CC-BY-NC-SA-4.0
@@ -1573,7 +1575,8 @@ void main() {
 
 uniform vec3 u_mouse;
 uniform float u_seed;
-
+uniform float u_sides;
+uniform float u_shape;
 void main() {
     vec2 I = gl_FragCoord.xy;
     vec3 r = vec3(u_resolution, 1.0);
@@ -1589,8 +1592,8 @@ void main() {
         if (abs(p.x) > 5.0) break;
         p.xz *= Rx;
         u_mouse.z > 0.0 ? p.yz *= Ry : p.xy *= Ry;
-        g = floor(p * 6.0);
-        f = fract(p * 6.0) - 0.5;
+        g = floor(p * u_sides);
+        f = fract(p * u_sides) - 0.5;
         float h = step(length(f), fract(sin(dot(g, vec3(127.1, 311.7, 74.7))) * 43758.5) * 0.3 + 0.1);
         float a = fract(sin(dot(g, vec3(43.7, 78.2, 123.4))) * 127.1) * 6.28;
         float e = 1.0, sc = 2.0;
@@ -1599,7 +1602,7 @@ void main() {
             e = min(e, min(max(g.x, g.y), min(max(g.y, g.z), max(g.x, g.z))) / sc);
             sc *= 0.6;
         }
-        float c = max(max(max(abs(p.x), abs(p.y)), abs(p.z)), dot(abs(p), vec3(0.577)) * 0.9) - 3.0;
+        float c = max(max(max(abs(p.x), abs(p.y)), abs(p.z)), dot(abs(p), vec3(0.577)) * u_shape) - 3.0;
         float s = 0.01 + 0.15 * abs(max(max(c, e - 0.1), length(sin(c)) - 0.3) - i / 130.0);
         d += s;
         float sf = smoothstep(0.02, 0.01, s);
@@ -1641,7 +1644,9 @@ void main() {
     },
     defaultParameters: [
       { key: "seed", label: "Seed", type: "float", value: 1205, min: 0, max: 9999, step: 1, group: "Form", designerSafe: false },
-      { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true }
+      { key: "scale", label: "Zoom", type: "float", value: 1.0, min: 0.5, max: 3.0, step: 0.01, group: "Form", designerSafe: true },
+      { key: "sides", label: "Glitter Pattern", type: "float", value: 6.0, min: 2.0, max: 12.0, step: 1.0, group: "Form", designerSafe: true },
+      { key: "shape", label: "Shape", type: "float", value: 0.9, min: 0.0, max: 1.5, step: 0.05, group: "Form", designerSafe: true }
     ],
     shaderSource: `${glslNoiseHeader}
 // SPDX-License-Identifier: CC-BY-NC-SA-4.0
@@ -1655,15 +1660,16 @@ void main() {
 
 uniform vec3 u_mouse;
 uniform float u_seed;
-
+uniform float u_sides;
+uniform float u_shape;
 #define A(C, Z) \\
 for (float d, i, c, e, sc, h, a, s, sf; i++ < 80.;) { \\
     vec3 p = vec3((I + I - r.xy) / r.y*d, d - 8.) * (1.1 / max(u_scale, 0.15)); vec3 g, f, k; \\
      if (abs(p.x) > 5.) break; \\
     p.xz *= Rx; \\
     u_mouse.z > 0. ? p.yz *= Ry : p.xy *= Ry; \\
-    g = floor(p * 6.); \\
-    f = fract(p * 6.) - .5; \\
+    g = floor(p * u_sides); \\
+    f = fract(p * u_sides) - .5; \\
     h = step(length(f), fract(sin(dot(g, vec3(127.1, 311.7, 74.7))) * 43758.5) * .3 + .1); \\
     a = fract(sin(dot(g, vec3(43.7, 78.2, 123.4))) * 127.1) * 6.28; \\
     e = 1., sc = 2.; \\
@@ -1672,7 +1678,7 @@ for (float d, i, c, e, sc, h, a, s, sf; i++ < 80.;) { \\
         e = min(e, min(max(g.x, g.y), min(max(g.y, g.z), max(g.x, g.z))) / sc); \\
         sc *= .6; \\
     } \\
-    c = max(max(max(abs(p.x), abs(p.y)), abs(p.z)), dot(abs(p), vec3(.577)) * .9) - 3.; \\
+    c = max(max(max(abs(p.x), abs(p.y)), abs(p.z)), dot(abs(p), vec3(.577)) * u_shape) - 3.; \\
     d += s = .01 + .15 * abs(max(max(c, e - .1),length(sin(c))-.3) + Z * .02 - i / 130.); \\
     sf = smoothstep(.02, .01, s); \\
     fragColor.C += 1.6 / s * (.5 + .5 * sin(i * .3 + Z * 5.) + sf * 4. * h * sin(a + i * .4 + Z * 5.));\\

@@ -321,7 +321,11 @@ export default function App() {
       };
       setSelectedPattern(pattern);
       setDocName(parsed.name);
-      setParameters(parsed.parameters);
+      const mergedParams = pattern.defaultParameters.map(defParam => {
+        const savedParam = parsed.parameters.find(p => p.key === defParam.key);
+        return savedParam ? { ...defParam, value: savedParam.value } : defParam;
+      });
+      setParameters(mergedParams);
       setPalette(parsed.palette);
       let codeToLoad = parsed.codeSource;
       if (pattern.id === 'lumen-holo-dice' && (codeToLoad.includes('A(C, Z)') || codeToLoad.includes('#define A('))) {
