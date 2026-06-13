@@ -1002,7 +1002,7 @@ void main() {
   },
   {
     id: "lumen-chrome",
-    name: "Lumen Chrome",
+    name: "Chrome",
     category: "Lumen Borrowed",
     description: "Reflective liquid metal inspired by LUMEN's chrome mode, with looping noise-space motion.",
     thumbnailUrl: "/thumbnails/lumen-chrome.png",
@@ -1078,7 +1078,7 @@ void main() {
   },
   {
     id: "lumen-silk-ribbons",
-    name: "Lumen Silk Ribbons",
+    name: "Silk Ribbons",
     category: "Lumen Borrowed",
     description: "Soft woven ribbons adapted from LUMEN's silk mode, built from looping band fields.",
     thumbnailUrl: "/thumbnails/lumen-silk-ribbons.png",
@@ -1136,7 +1136,7 @@ void main() {
   },
   {
     id: "lumen-aura-rings",
-    name: "Lumen Aura Rings",
+    name: "Aura Rings",
     category: "Lumen Borrowed",
     description: "Breathing radial aura fields inspired by LUMEN's ring shader, with seamless loop offsets.",
     thumbnailUrl: "/thumbnails/lumen-aura-rings.png",
@@ -1194,7 +1194,7 @@ void main() {
   },
   {
     id: "lumen-soft-bloom",
-    name: "Lumen Soft Bloom",
+    name: "Soft Bloom",
     category: "Lumen Borrowed",
     description: "Soft orbital color blooms borrowed from LUMEN's form controls, with seeded loop motion.",
     thumbnailUrl: "/thumbnails/lumen-soft-bloom.png",
@@ -1244,7 +1244,7 @@ void main() {
   },
   {
     id: "lumen-halftone",
-    name: "Lumen Halftone",
+    name: "Halftone",
     category: "Lumen Borrowed",
     description: "A seeded halftone dot field borrowed from LUMEN, driven by density, warp, and travel controls.",
     thumbnailUrl: "/thumbnails/lumen-halftone.png",
@@ -1314,7 +1314,7 @@ void main() {
   },
   {
     id: "lumen-data-glyphs",
-    name: "Lumen Data Glyphs",
+    name: "Data Glyphs",
     category: "Lumen Borrowed",
     description: "A looping data-glyph grid borrowed from LUMEN's glyph mode, with shimmer and density controls.",
     thumbnailUrl: "/thumbnails/lumen-data-glyphs.png",
@@ -1396,7 +1396,7 @@ void main() {
   },
   {
     id: "lumen-reeded-glass",
-    name: "Lumen Reeded Glass",
+    name: "Reeded Glass",
     category: "Lumen Borrowed",
     description: "Vertical reeded-glass refraction borrowed from LUMEN's glass mode, with ridge and lighting controls.",
     thumbnailUrl: "/thumbnails/lumen-reeded-glass.png",
@@ -1479,7 +1479,7 @@ void main() {
   },
   {
     id: "lumen-mosaic-bloom",
-    name: "Lumen Mosaic Bloom",
+    name: "Mosaic Bloom",
     category: "Lumen Borrowed",
     description: "Pixel-bloom mosaic borrowed from LUMEN, quantizing soft color blobs into luminous tiles.",
     thumbnailUrl: "/thumbnails/lumen-mosaic-bloom.png",
