@@ -1,24 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { KeyboardEvent, MouseEvent, TouchEvent } from 'react';
-import {
-  FloppyDisk,
-  Gear,
-  Plus,
-  Shuffle,
-  ArrowSquareOut,
-  CaretDown,
-  Sparkle,
-  ArrowsLeftRight
-} from '@phosphor-icons/react';
-
+import { Icon } from '@iconify/react';
 import { defaultPatterns } from './patternsData';
 import type {
   ShaderPattern,
   EditorParameter,
   GradientPalette,
   ColorStop,
-  PreviewSettings,
-  ExportSettings
+  PreviewSettings
 } from './types';
 
 const palettePresets: GradientPalette[] = [
@@ -251,12 +240,7 @@ export default function App() {
     loopLength: 10.0
   });
 
-  // Export settings
-  const [exportSettings, setExportSettings] = useState<ExportSettings>({
-    format: 'png',
-    width: 1920,
-    height: 1080
-  });
+
 
   // Selected stop in gradient creator
   const [activeStopId, setActiveStopId] = useState<string | null>(
@@ -342,7 +326,7 @@ export default function App() {
               onClick={() => handleParameterChange('seed', Math.floor(Math.random() * 10000))}
               style={{ padding: '0 10px', height: '28px', minHeight: '28px' }}
             >
-              <Shuffle size={12} />
+              <Icon icon="solar:shuffle-bold" width="12" />
               Roll
             </button>
           </div>
@@ -1484,7 +1468,7 @@ ${stylesObject}
                 const h = 1080;
                 const w = 2 * Math.round((h * ar) / 2);
                 setPreview(prev => ({ ...prev, width: w, height: h }));
-                setExportSettings(prev => ({ ...prev, width: w, height: h }));
+
               }}
               style={{
                 height: '26px',
@@ -1516,7 +1500,7 @@ ${stylesObject}
               aria-expanded={dropdownOpen}
             >
               <span>{docName}</span>
-              <CaretDown size={14} />
+              <Icon icon="solar:alt-arrow-down-bold" width="14" />
             </button>
             
             {dropdownOpen && (
@@ -1536,11 +1520,11 @@ ${stylesObject}
             )}
           </div>
           <button className="btn btn-primary" onClick={handleRandomizeAll} title="Randomize everything">
-            <Shuffle size={14} />
+            <Icon icon="solar:shuffle-bold" width="14" />
             Randomize
           </button>
           <button className="btn btn-secondary" onClick={handleSave}>
-            <FloppyDisk size={15} />
+            <Icon icon="solar:disk-bold" width="15" />
             Save
           </button>
 
@@ -1562,14 +1546,14 @@ ${stylesObject}
             onClick={() => { setExportType('code'); setExportModalOpen(true); }}
             title="Export Assets (Code)"
           >
-            <ArrowSquareOut size={16} />
+            <Icon icon="solar:export-bold" width="16" />
           </button>
           <button 
             className="btn btn-icon" 
             onClick={() => setSettingsModalOpen(true)}
             title="Settings"
           >
-            <Gear size={16} />
+            <Icon icon="solar:settings-bold" width="16" />
           </button>
         </div>
       </header>
@@ -1625,7 +1609,7 @@ ${stylesObject}
                 <div className="compare-handle" style={{ left: `${comparePercent}%` }}>
                   <div className="compare-handle-line" />
                   <div className="compare-handle-button">
-                    <ArrowsLeftRight size={18} />
+                    <Icon icon="solar:transfer-horizontal-bold" width="18" />
                   </div>
                 </div>
 
@@ -1668,7 +1652,7 @@ ${stylesObject}
                     pointerEvents: 'auto'
                   }}
                 >
-                  <Sparkle size={32} style={{ marginBottom: '12px', color: '#a855f7' }} />
+                  <Icon icon="solar:stars-bold" width="32" style={{ marginBottom: '12px', color: '#a855f7' }} />
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>ShaderBuild Hybrid Stage</h4>
                   <p style={{ margin: 0, fontSize: '11px', color: '#ccc' }}>WebGL flowing background combined with CSS glass card refraction overlay.</p>
                 </div>
@@ -1836,11 +1820,11 @@ ${stylesObject}
 
                 <div className="palette-actions">
                   <button className="palette-row-btn" onClick={handleRandomizePalette}>
-                    <Shuffle size={12} />
+                    <Icon icon="solar:shuffle-bold" width="12" />
                     Randomize
                   </button>
                   <button className="palette-row-btn" onClick={handleAddStop}>
-                    <Plus size={12} />
+                    <Icon icon="solar:add-circle-bold" width="12" />
                     Add Stop
                   </button>
                 </div>
@@ -2021,7 +2005,7 @@ ${stylesObject}
                   onChange={(e) => {
                     const [w, h] = e.target.value.split('x').map(Number);
                     setPreview(prev => ({ ...prev, width: w, height: h }));
-                    setExportSettings(prev => ({ ...prev, width: w, height: h }));
+
                   }}
                   style={{ backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px' }}
                 >
@@ -2042,19 +2026,6 @@ ${stylesObject}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Default Export Format</span>
-                <select 
-                  value={exportSettings.format}
-                  onChange={(e) => setExportSettings(prev => ({ ...prev, format: e.target.value as ExportSettings['format'] }))}
-                  style={{ backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px' }}
-                >
-                  <option value="png">PNG Image</option>
-                  <option value="jpg">JPG Image</option>
-                  <option value="webm">WebM Video</option>
-                  <option value="gif">GIF animation</option>
-                </select>
-              </div>
             </div>
 
             <div className="modal-actions">
