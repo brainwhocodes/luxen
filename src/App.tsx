@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import type { KeyboardEvent, MouseEvent, TouchEvent } from 'react';
 import {
   FloppyDisk,
-  ShareNetwork,
   Gear,
   Plus,
   Shuffle,
@@ -285,6 +284,9 @@ export default function App() {
   const [gifDither, setGifDither] = useState<boolean>(true);
   const [gifLoop, setGifLoop] = useState<boolean>(true);
   const [exportModalKind, setExportModalKind] = useState<'png' | 'video' | 'gif' | null>(null);
+  const [setModalOpen, setSetModalOpen] = useState<boolean>(false);
+  const [setCount, setSetCount] = useState<number>(6);
+  const [setRes, setSetRes] = useState<string>('1080');
 
   const modalCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -785,23 +787,6 @@ export default function App() {
     showToast("Changes saved successfully");
   };
 
-  // Share: serialize to hash state and copy link
-  const handleShare = () => {
-    const state = {
-      pId: selectedPattern.id,
-      name: docName,
-      stops: palette.stops.map(s => ({ c: s.color, p: s.position })),
-      params: parameters.map(p => ({ k: p.key, v: p.value }))
-    };
-    const serialized = btoa(JSON.stringify(state));
-    const shareUrl = `${window.location.origin}${window.location.pathname}#state=${serialized}`;
-    
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      showToast("Shareable link copied to clipboard");
-    }).catch(() => {
-      showToast("Failed to copy link");
-    });
-  };
 
   const handleExportPNG = () => {
     setExportModalKind('png');
@@ -941,6 +926,90 @@ export default function App() {
         showToast("GIF rendered (simulation complete)!");
       }
     }, interval);
+  };
+
+  const handleRandomizeAll = () => {
+    setParameters(prev =>
+      prev.map(p => {
+        if (p.key === 'seed') {
+          return { ...p, value: Math.floor(Math.random() * 10000) };
+        }
+        if (p.min !== undefined && p.max !== undefined) {
+          const range = p.max - p.min;
+          const randomVal = p.min + Math.random() * range;
+          const steppedVal = p.step ? Math.round(randomVal / p.step) * p.step : randomVal;
+          return { ...p, value: Number(steppedVal.toFixed(4)) };
+        }
+        return p;
+      })
+    );
+    setIsDirty(true);
+    showToast("Randomized all parameters!");
+  };
+
+  const setSeeds = (base: number, n: number): number[] => {
+    const seeds: number[] = [];
+    for (let i = 0; i < n; i++) {
+      seeds.push((base + 73 + i * 911) % 10000);
+    }
+    return seeds;
+  };
+
+  const handleDownloadSet = async () => {
+    setSetModalOpen(false);
+    
+    const canvas = canvasRef.current;
+    if (!canvas || selectedPattern.renderEngine === 'css') {
+      showToast("Set download only available for WebGL shaders.");
+      return;
+    }
+    
+    showToast("Generating set images...");
+    setRecordingVideo(true);
+    setExportingTitle("Generating Set");
+    setRecordProgress(0);
+
+    const h = parseInt(setRes, 10);
+    const ar = aspectMap[aspectRatio];
+    const w = 2 * Math.round((h * ar) / 2);
+
+    const originalSeed = parameters.find(p => p.key === 'seed')?.value as number || 0;
+    const prevW = canvas.width;
+    const prevH = canvas.height;
+
+    canvas.width = w;
+    canvas.height = h;
+
+    const seeds = setSeeds(Math.round(originalSeed), setCount);
+    for (let i = 0; i < seeds.length; i++) {
+      if (!recordingVideo && !recordingGIF) {
+        break;
+      }
+      setRecordProgress(((i) / seeds.length) * 100);
+      setExportingDetail(`rendering ${i + 1}/${seeds.length} • seed ${seeds[i]} • ${w}×${h}`);
+
+      await new Promise<void>((resolve) => {
+        setParameters(prev => prev.map(p => p.key === 'seed' ? { ...p, value: seeds[i] } : p));
+        setTimeout(() => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `lumen-set-${i+1}-seed${String(seeds[i]).padStart(4, '0')}.png`;
+              link.click();
+              setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+            }
+            resolve();
+          }, 'image/png');
+        }, 220);
+      });
+    }
+
+    setParameters(prev => prev.map(p => p.key === 'seed' ? { ...p, value: originalSeed } : p));
+    canvas.width = prevW;
+    canvas.height = prevH;
+    setRecordingVideo(false);
+    showToast(`Downloaded set of ${setCount} variations successfully!`);
   };
 
   // --- Gradient stops editing actions ---
@@ -1353,13 +1422,13 @@ ${stylesObject}
               </div>
             )}
           </div>
-          <button className="btn btn-primary" onClick={handleSave}>
+          <button className="btn btn-primary" onClick={handleRandomizeAll} title="Randomize everything">
+            <Shuffle size={14} />
+            Randomize
+          </button>
+          <button className="btn btn-secondary" onClick={handleSave}>
             <FloppyDisk size={15} />
             Save
-          </button>
-          <button className="btn btn-secondary" onClick={handleShare}>
-            <ShareNetwork size={15} />
-            Share
           </button>
 
           {/* Export buttons from lumenshaders */}
@@ -1372,7 +1441,9 @@ ${stylesObject}
           <button className="btn btn-secondary" onClick={handleExportGIF} title="Render seamless looping GIF">
             GIF
           </button>
-
+          <button className="btn btn-secondary" onClick={() => setSetModalOpen(true)} title="Generate set of variations">
+            Set
+          </button>
           <button 
             className="btn btn-icon" 
             onClick={() => { setExportType('code'); setExportModalOpen(true); }}
@@ -1558,7 +1629,11 @@ ${stylesObject}
                     <div 
                       className="thumbnail"
                       style={{ backgroundImage: `url(${p.thumbnailUrl})` }}
-                    />
+                    >
+                      <span className={`engine-chip ${p.renderEngine}`}>
+                        {p.renderEngine === 'webgl2' ? 'WebGL' : p.renderEngine === 'css' ? 'CSS' : 'Hybrid'}
+                      </span>
+                    </div>
                     <span className="name">{p.name}</span>
                   </div>
                 ))}
@@ -1880,132 +1955,184 @@ ${stylesObject}
 
       {/* 3. Export Settings Modal mimicking lumenshaders */}
       {exportModalKind && (
-        <div className="modal-overlay" onClick={() => setExportModalKind(null)}>
-          <div className="modal-content" style={{ width: 'min(90vw, 560px)' }} onClick={(e) => e.stopPropagation()}>
-            <h3>
-              {exportModalKind === 'png' ? 'Export image' : exportModalKind === 'video' ? 'Export video' : 'Export GIF'}
-            </h3>
-            <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>
-              {selectedPattern.name} • seed {Math.round(parameters.find(p => p.key === 'seed')?.value as number || 0)}
-            </p>
-
-            <div className="export-modal-grid">
-              {/* Left Column: Live Preview */}
-              <div className="modal-preview-container">
-                <canvas 
-                  ref={modalCanvasRef} 
-                  width={240} 
-                  height={Math.round(240 / aspectMap[aspectRatio])}
-                />
-                <div className="modal-preview-meta">
-                  {exportModalKind === 'png' && `${Math.round(parseInt(imgRes, 10) * aspectMap[aspectRatio])} × ${imgRes} px`}
-                  {exportModalKind === 'video' && `${Math.round(parseInt(vidRes, 10) * aspectMap[aspectRatio])} × ${vidRes} • ${vidFps} fps`}
-                  {exportModalKind === 'gif' && `${gifW} × ${Math.round(parseInt(gifW, 10) / aspectMap[aspectRatio])} • ${gifFps} fps`}
+        <div className="modal-backdrop" onClick={() => setExportModalKind(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <div className="modal-title">
+                  {exportModalKind === 'png' ? 'Export image' : exportModalKind === 'video' ? 'Export video' : 'Export GIF'}
+                </div>
+                <div className="modal-sub">
+                  {selectedPattern.name} • seed {Math.round(parameters.find(p => p.key === 'seed')?.value as number || 0)}
                 </div>
               </div>
+              <button className="modal-close" onClick={() => setExportModalKind(null)} aria-label="Close export dialog">
+                <svg viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+              </button>
+            </div>
 
-              {/* Right Column: Settings Form */}
-              <div className="modal-form-fields">
-                {exportModalKind === 'png' && (
-                  <div className="field-row">
-                    <label>Resolution</label>
-                    <select value={imgRes} onChange={(e) => setImgRes(e.target.value)}>
-                      <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
-                      <option value="1440">{`${Math.round(1440 * aspectMap[aspectRatio])} × 1440`}</option>
-                      <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160 (4K)`}</option>
-                    </select>
-                  </div>
-                )}
-
-                {exportModalKind === 'video' && (
-                  <>
-                    <div className="field-row">
-                      <label>Resolution</label>
-                      <select value={vidRes} onChange={(e) => setVidRes(e.target.value)}>
-                        <option value="720">720p</option>
-                        <option value="1080">1080p</option>
-                        <option value="1440">1440p</option>
-                      </select>
-                    </div>
-                    <div className="field-row">
-                      <label>Frame rate</label>
-                      <select value={vidFps} onChange={(e) => setVidFps(e.target.value)}>
-                        <option value="24">24 fps</option>
-                        <option value="30">30 fps</option>
-                        <option value="60">60 fps</option>
-                      </select>
-                    </div>
-                    <div className="field-row">
-                      <label>Length</label>
-                      <select value={vidLen} onChange={(e) => setVidLen(e.target.value)}>
-                        <option value="l1">1 loop</option>
-                        <option value="l2">2 loops</option>
-                        <option value="l3">3 loops</option>
-                        <option value="l4">4 loops</option>
-                        <option value="l6">6 loops</option>
-                        <option value="l8">8 loops</option>
-                        <option value="s5">5 seconds</option>
-                        <option value="s10">10 seconds</option>
-                        <option value="s15">15 seconds</option>
-                        <option value="s30">30 seconds</option>
-                        <option value="s60">60 seconds</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {exportModalKind === 'gif' && (
-                  <>
-                    <div className="field-row">
-                      <label>Width</label>
-                      <select value={gifW} onChange={(e) => setGifW(e.target.value)}>
-                        <option value="360">360 px</option>
-                        <option value="480">480 px</option>
-                        <option value="640">640 px</option>
-                        <option value="800">800 px</option>
-                      </select>
-                    </div>
-                    <div className="field-row">
-                      <label>Frame rate</label>
-                      <select value={gifFps} onChange={(e) => setGifFps(e.target.value)}>
-                        <option value="15">15 fps</option>
-                        <option value="20">20 fps</option>
-                        <option value="25">25 fps</option>
-                        <option value="30">30 fps</option>
-                      </select>
-                    </div>
-                    <div className="field-row">
-                      <label>Dithering</label>
-                      <select value={gifDither ? 'true' : 'false'} onChange={(e) => setGifDither(e.target.value === 'true')}>
-                        <option value="true">Enabled</option>
-                        <option value="false">Disabled</option>
-                      </select>
-                    </div>
-                    <div className="field-row">
-                      <label>Loop forever</label>
-                      <select value={gifLoop ? 'true' : 'false'} onChange={(e) => setGifLoop(e.target.value === 'true')}>
-                        <option value="true">Yes</option>
-                        <option value="false">No</option>
-                      </select>
-                    </div>
-                  </>
-                )}
+            <div className="modal-preview">
+              <canvas 
+                ref={modalCanvasRef} 
+                width={480} 
+                height={Math.round(480 / aspectMap[aspectRatio])}
+              />
+              <div className="modal-preview-meta mono">
+                {exportModalKind === 'png' && `${Math.round(parseInt(imgRes, 10) * aspectMap[aspectRatio])} × ${imgRes} px`}
+                {exportModalKind === 'video' && `${Math.round(parseInt(vidRes, 10) * aspectMap[aspectRatio])} × ${vidRes} • ${vidFps} fps`}
+                {exportModalKind === 'gif' && `${gifW} × ${Math.round(parseInt(gifW, 10) / aspectMap[aspectRatio])} • ${gifFps} fps`}
               </div>
             </div>
 
+            <div className="modal-form">
+              {exportModalKind === 'png' && (
+                <div className="field-row">
+                  <span className="ctl-label">Resolution</span>
+                  <select value={imgRes} onChange={(e) => setImgRes(e.target.value)}>
+                    <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
+                    <option value="1440">{`${Math.round(1440 * aspectMap[aspectRatio])} × 1440`}</option>
+                    <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160`}</option>
+                  </select>
+                </div>
+              )}
+
+              {exportModalKind === 'video' && (
+                <>
+                  <div className="field-row">
+                    <span className="ctl-label">Resolution</span>
+                    <select value={vidRes} onChange={(e) => setVidRes(e.target.value)}>
+                      <option value="720">720p</option>
+                      <option value="1080">1080p</option>
+                      <option value="1440">1440p</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Frame rate</span>
+                    <select value={vidFps} onChange={(e) => setVidFps(e.target.value)}>
+                      <option value="24">24 fps</option>
+                      <option value="30">30 fps</option>
+                      <option value="60">60 fps</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Length</span>
+                    <select value={vidLen} onChange={(e) => setVidLen(e.target.value)}>
+                      <option value="l1">1 loop</option>
+                      <option value="l2">2 loops</option>
+                      <option value="l3">3 loops</option>
+                      <option value="l4">4 loops</option>
+                      <option value="l6">6 loops</option>
+                      <option value="l8">8 loops</option>
+                      <option value="s5">5 seconds</option>
+                      <option value="s10">10 seconds</option>
+                      <option value="s15">15 seconds</option>
+                      <option value="s30">30 seconds</option>
+                      <option value="s60">60 seconds</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {exportModalKind === 'gif' && (
+                <>
+                  <div className="field-row">
+                    <span className="ctl-label">Width</span>
+                    <select value={gifW} onChange={(e) => setGifW(e.target.value)}>
+                      <option value="360">360 px</option>
+                      <option value="480">480 px</option>
+                      <option value="640">640 px</option>
+                      <option value="800">800 px</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Frame rate</span>
+                    <select value={gifFps} onChange={(e) => setGifFps(e.target.value)}>
+                      <option value="15">15 fps</option>
+                      <option value="20">20 fps</option>
+                      <option value="25">25 fps</option>
+                      <option value="30">30 fps</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Dithering</span>
+                    <select value={gifDither ? 'true' : 'false'} onChange={(e) => setGifDither(e.target.value === 'true')}>
+                      <option value="true">Enabled</option>
+                      <option value="false">Disabled</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Loop forever</span>
+                    <select value={gifLoop ? 'true' : 'false'} onChange={(e) => setGifLoop(e.target.value === 'true')}>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
             <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setExportModalKind(null)}>
-                Cancel
-              </button>
               <button 
-                className="btn btn-primary"
+                className="btn btn-primary modal-dl"
                 onClick={() => {
                   if (exportModalKind === 'png') executeExportPNG();
                   if (exportModalKind === 'video') executeExportWebM();
                   if (exportModalKind === 'gif') executeExportGIF();
                 }}
               >
+                <svg viewBox="0 0 16 16" style={{ width: '14px', height: '14px', marginRight: '6px' }}><path d="M8 2 V10 M4.5 7 L8 10.5 L11.5 7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 13.5 H13" stroke="currentColor" stroke-width="1.6"/></svg>
                 Download {exportModalKind === 'png' ? 'PNG' : exportModalKind === 'video' ? 'WebM' : 'GIF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Set Generator Modal mimicking lumenshaders */}
+      {setModalOpen && (
+        <div className="modal-backdrop" onClick={() => setSetModalOpen(false)}>
+          <div className="modal-content" style={{ width: 'min(90vw, 560px)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <div>
+                <div className="modal-title">Gradient set</div>
+                <div className="modal-sub">consistent variations of the current design</div>
+              </div>
+              <button className="modal-close" onClick={() => setSetModalOpen(false)} aria-label="Close set dialog">
+                <svg viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+              </button>
+            </div>
+
+            <div className="modal-note" style={{ fontSize: '11.5px', color: '#a1a1aa', lineHeight: '1.55', marginBottom: '14px' }}>
+              Same style, palette and settings with different seeds. Use a set for hero, cards and section backgrounds that visually belong together.
+            </div>
+
+            <div className="modal-form">
+              <div className="field-row">
+                <span className="ctl-label">Variations</span>
+                <select value={String(setCount)} onChange={(e) => setSetCount(Number(e.target.value))}>
+                  <option value="4">4</option>
+                  <option value="6">6</option>
+                  <option value="8">8</option>
+                  <option value="12">12</option>
+                </select>
+              </div>
+              <div className="field-row">
+                <span className="ctl-label">PNG size</span>
+                <select value={setRes} onChange={(e) => setSetRes(e.target.value)}>
+                  <option value="720">{`${Math.round(720 * aspectMap[aspectRatio])} × 720`}</option>
+                  <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
+                  <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160 (4K)`}</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setSetModalOpen(false)} style={{ marginRight: '8px' }}>
+                Cancel
+              </button>
+              <button className="btn btn-primary modal-dl" onClick={handleDownloadSet}>
+                <svg viewBox="0 0 16 16" style={{ width: '14px', height: '14px', marginRight: '6px' }}><path d="M8 2 V10 M4.5 7 L8 10.5 L11.5 7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 13.5 H13" stroke="currentColor" stroke-width="1.6"/></svg>
+                Download set as ZIP
               </button>
             </div>
           </div>

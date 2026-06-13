@@ -168,9 +168,11 @@ textarea {
 .dropdown-menu {
   position: absolute;
   top: 44px;
-  left: 0;
+  right: 0;
+  left: auto;
   z-index: 100;
-  width: 100%;
+  width: auto;
+  min-width: 220px;
   max-height: 360px;
   overflow-y: auto;
   padding: 8px;
@@ -240,6 +242,7 @@ textarea {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 18px 20px 20px;
   }
 }
@@ -539,6 +542,7 @@ textarea {
     text-align: center;
 
     .thumbnail {
+      position: relative;
       width: 100%;
       aspect-ratio: 1.28;
       border: 1px solid $border-color;
@@ -547,6 +551,37 @@ textarea {
       background-position: center;
       overflow: hidden;
       transition: $transition-default;
+    }
+
+    .engine-chip {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      padding: 1.5px 5px;
+      font-size: 8px;
+      font-weight: 750;
+      text-transform: uppercase;
+      border-radius: 4px;
+      background-color: rgba(10, 10, 14, 0.8);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      letter-spacing: 0.04em;
+      line-height: 1;
+
+      &.webgl2 {
+        color: #a78bfa;
+        border: 1px solid rgba(167, 139, 250, 0.22);
+      }
+
+      &.css {
+        color: #fb7185;
+        border: 1px solid rgba(251, 113, 133, 0.22);
+      }
+
+      &.hybrid {
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.22);
+      }
     }
 
     .name {
@@ -1072,5 +1107,188 @@ textarea {
   &.active {
     background-color: #26262d !important;
     color: #ffffff !important;
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(5, 5, 8, 0.72);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(20, 20, 25, 0.94);
+  backdrop-filter: blur(26px) saturate(1.3);
+  -webkit-backdrop-filter: blur(26px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 40px 110px -24px rgba(0, 0, 0, 0.95);
+  padding: 20px 22px 22px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.modal-title {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+}
+
+.modal-sub {
+  font-size: 10.5px;
+  color: #71717a;
+  margin-top: 3px;
+  font-family: monospace;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #52525b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease, transform 160ms ease;
+
+  svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    transform: rotate(90deg);
+  }
+}
+
+.modal-preview {
+  position: relative;
+  border-radius: 13px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+  
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+.modal-preview-meta {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(8, 8, 12, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 9px;
+  border-radius: 7px;
+  letter-spacing: 0.04em;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-dl {
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13px;
+}
+
+.ctl-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #a1a1aa;
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* Custom Select Element Style */
+select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: $text-primary;
+  font-family: $mono-font-stack;
+  font-size: 11px;
+  height: 28px;
+  padding: 0 24px 0 10px;
+  outline: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2371717a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  &:focus {
+    border-color: $accent-violet;
   }
 }
