@@ -326,7 +326,7 @@ export default function App() {
               onClick={() => handleParameterChange('seed', Math.floor(Math.random() * 10000))}
               style={{ padding: '0 10px', height: '28px', minHeight: '28px' }}
             >
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" /></svg>
+              <DiceIcon size={12} />
               Roll
             </button>
           </div>
@@ -1542,7 +1542,7 @@ ${stylesObject}
             onClick={handleRandomizeAll} 
             title="Randomize parameters"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" ry="4" /><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /></svg>
+            <DiceIcon size={18} />
           </button>
           <button 
             className="btn btn-icon" 
@@ -1823,7 +1823,7 @@ ${stylesObject}
 
                 <div className="palette-actions">
                   <button className="palette-row-btn" onClick={handleRandomizePalette}>
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" /></svg>
+                    <DiceIcon size={12} />
                     Randomize
                   </button>
                 </div>
@@ -2411,3 +2411,21 @@ const ZipWriter = (function () {
 
   return { build: build };
 })();
+
+interface DiceIconProps {
+  size: number;
+}
+
+const DiceIcon: React.FC<DiceIconProps> = ({ size }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
+    <path d="M0 0h24v24H0z" fill="none" />
+    <path 
+      fill="none" 
+      stroke="currentColor" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      strokeWidth="1.5" 
+      d="M14.5 14.5c.12.069.384-.166.592-.525c.207-.358.278-.705.158-.774s-.384.166-.592.524c-.207.36-.278.706-.158.775m3.25 1.5c.12.069.384-.166.592-.525c.207-.358.278-.705.158-.774s-.384.166-.592.524c-.207.36-.278.706-.158.775M9.5 14.5c-.12.069-.384-.166-.592-.525c-.207-.358-.278-.705-.158-.774s.384.166.592.524c.207.36.278.706.158.775m0 3.25c-.12.069-.384-.166-.592-.525c-.207-.358-.278-.705-.158-.774s.384.166.592.524c.207.36.278.706.158.775M6.25 16c-.12.069-.384-.166-.592-.525c-.207-.358-.278-.705-.158-.774s.384.166.592.524c.207.36.278.706.158.775m0-3.201c-.12.07-.384-.166-.592-.524c-.207-.36-.278-.706-.158-.775s.384.166.592.525c.207.358.278.705.158.774m6.5-5.549a.75.25 0 0 1-.75.25a.75.25 0 0 1-.75-.25A.75.25 0 0 1 12 7a.75.25 0 0 1 .75.25M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"
+    />
+  </svg>
+);
