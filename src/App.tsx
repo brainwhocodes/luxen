@@ -323,9 +323,13 @@ export default function App() {
       setDocName(parsed.name);
       setParameters(parsed.parameters);
       setPalette(parsed.palette);
-      setCodeSource(parsed.codeSource);
+      let codeToLoad = parsed.codeSource;
+      if (pattern.id === 'lumen-holo-dice' && (codeToLoad.includes('A(C, Z)') || codeToLoad.includes('#define A('))) {
+        codeToLoad = pattern.shaderSource ?? '';
+      }
+      setCodeSource(codeToLoad);
       setCompileError(null);
-      setLastValidShaderSource(parsed.codeSource);
+      setLastValidShaderSource(codeToLoad);
       setActiveStopId(parsed.palette.stops[0]?.id || null);
       setIsDirty(false);
       startTimeRef.current = Date.now();
