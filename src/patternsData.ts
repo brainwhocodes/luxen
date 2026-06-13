@@ -1682,113 +1682,108 @@ void main() {
       { key: "deep_purple", label: "Deep Purple", type: "float", value: 1.0, min: 0.0, max: 1.0, step: 0.01, group: "Lighting", designerSafe: true },
       { key: "opacity", label: "Opacity", type: "float", value: 0.66, min: 0.05, max: 1.0, step: 0.01, group: "Lighting", designerSafe: true }
     ],
-    shaderSource: `${glslNoiseHeader}
-// Fragment-stage adaptation of Faboolea/shaders-on-scroll.
-// Original project: Three.js IcosahedronGeometry wireframe with noisy vertex displacement.
+    webglGeometry: "icosahedron-lines",
+    vertexShaderSource: `#version 300 es
+precision highp float;
+
+in vec3 position;
+in vec3 normal;
+in vec2 uv;
+
+uniform vec2 u_resolution;
+uniform float u_time;
 uniform float u_seed;
 uniform float u_scroll;
 uniform float u_frequency;
 uniform float u_amplitude;
 uniform float u_density;
 uniform float u_strength;
-uniform float u_deep_purple;
-uniform float u_opacity;
+uniform float u_scale;
 
-mat3 rotateX(float angle) {
+out float vDistortion;
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = hash(i + vec2(0.0, 0.0));
+  float b = hash(i + vec2(1.0, 0.0));
+  float c = hash(i + vec2(0.0, 1.0));
+  float d = hash(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y) * 2.0 - 1.0;
+}
+
+mat3 rotation3dX(float angle) {
   float s = sin(angle);
   float c = cos(angle);
   return mat3(1.0, 0.0, 0.0, 0.0, c, -s, 0.0, s, c);
 }
 
-mat3 rotateY(float angle) {
+mat3 rotation3dY(float angle) {
   float s = sin(angle);
   float c = cos(angle);
   return mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
 }
 
+vec3 rotateY(vec3 v, float angle) {
+  return rotation3dY(angle) * v;
+}
+
+void main() {
+  float scrollAmount = clamp(u_scroll, 0.0, 1.0);
+  float effectiveFrequency = u_frequency * scrollAmount;
+  float effectiveStrength = u_strength * scrollAmount;
+  float distortion = noise(normal.xy * u_density + vec2(u_seed * 0.017, normal.z + u_time * 0.08)) * effectiveStrength;
+
+  vec3 pos = position + (normal * distortion * 0.28);
+  float angle = sin(uv.y * effectiveFrequency) * u_amplitude * scrollAmount * 0.18;
+  pos = rotateY(pos, angle);
+  pos = rotation3dX(scrollAmount * 3.14159265359) * pos;
+  pos = rotateY(pos, u_time * 0.05 + u_seed * 0.001);
+  pos *= u_scale;
+
+  vDistortion = distortion;
+
+  float depth = pos.z + 2.85;
+  vec2 projected = pos.xy / max(depth, 0.2);
+  projected.x *= u_resolution.y / u_resolution.x;
+  gl_Position = vec4(projected * 2.2, pos.z * 0.08, 1.0);
+}
+`,
+    shaderSource: `#version 300 es
+precision highp float;
+out vec4 fragColor;
+
+uniform float u_scroll;
+uniform float u_opacity;
+uniform float u_deep_purple;
+
+in float vDistortion;
+
 vec3 cosPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
   return a + b * cos(6.28318 * (c * t + d));
 }
 
-vec3 icoVertex(int id) {
-  float p = 1.61803398875;
-  if (id == 0) return normalize(vec3(0.0, 1.0, p));
-  if (id == 1) return normalize(vec3(0.0, -1.0, p));
-  if (id == 2) return normalize(vec3(0.0, 1.0, -p));
-  if (id == 3) return normalize(vec3(0.0, -1.0, -p));
-  if (id == 4) return normalize(vec3(1.0, p, 0.0));
-  if (id == 5) return normalize(vec3(-1.0, p, 0.0));
-  if (id == 6) return normalize(vec3(1.0, -p, 0.0));
-  if (id == 7) return normalize(vec3(-1.0, -p, 0.0));
-  if (id == 8) return normalize(vec3(p, 0.0, 1.0));
-  if (id == 9) return normalize(vec3(-p, 0.0, 1.0));
-  if (id == 10) return normalize(vec3(p, 0.0, -1.0));
-  return normalize(vec3(-p, 0.0, -1.0));
-}
-
-vec3 displaceVertex(vec3 v, float scrollAmount) {
-  float effectiveFrequency = u_frequency * scrollAmount;
-  float effectiveStrength = u_strength * scrollAmount;
-  float distortion = (noise(v.xy * u_density + vec2(u_seed * 0.017, v.z * 2.0 + u_time * 0.08)) * 2.0 - 1.0) * effectiveStrength;
-  vec3 p = v + normalize(v) * distortion * 0.28;
-  float angle = sin(v.y * effectiveFrequency) * u_amplitude * 0.25 * scrollAmount;
-  p = rotateY(angle) * p;
-  p = rotateX(scrollAmount * 3.14159265) * p;
-  p = rotateY(u_time * 0.05 + u_seed * 0.001) * p;
-  return p;
-}
-
-vec2 projectPoint(vec3 p) {
-  float depth = p.z + 3.1;
-  return p.xy / depth * 2.0 * u_scale;
-}
-
-float segmentDistance(vec2 p, vec2 a, vec2 b) {
-  vec2 pa = p - a;
-  vec2 ba = b - a;
-  float h = clamp(dot(pa, ba) / max(dot(ba, ba), 0.0001), 0.0, 1.0);
-  return length(pa - ba * h);
-}
-
 void main() {
-  vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+  float distort = vDistortion * 3.0;
   float scrollAmount = clamp(u_scroll, 0.0, 1.0);
-  float lineMask = 0.0;
-  float glowMask = 0.0;
-  float distortionMix = 0.0;
 
-  for (int i = 0; i < 12; i++) {
-    for (int j = 0; j < 12; j++) {
-      if (j <= i) continue;
-      vec3 rawA = icoVertex(i);
-      vec3 rawB = icoVertex(j);
-      if (distance(rawA, rawB) > 1.08) continue;
-
-      vec3 a3 = displaceVertex(rawA, scrollAmount);
-      vec3 b3 = displaceVertex(rawB, scrollAmount);
-      vec2 a = projectPoint(a3);
-      vec2 b = projectPoint(b3);
-
-      float d = segmentDistance(p, a, b);
-      float width = mix(0.0045, 0.0075, scrollAmount);
-      lineMask += smoothstep(width * 1.8, width, d);
-      glowMask += exp(-d * 44.0) * 0.08;
-      distortionMix += abs(a3.z - b3.z) * 0.015;
-    }
-  }
-
-  float visibleWire = clamp(lineMask, 0.0, 1.0);
-  float visibleGlow = clamp(glowMask, 0.0, 1.0);
   vec3 brightness = vec3(0.1, 0.1, 0.9);
   vec3 contrast = vec3(0.3, 0.3, 0.3);
   vec3 oscillation = vec3(0.5, 0.5, 0.9);
   vec3 phase = vec3(0.9, 0.1, 0.8);
-  vec3 wireColor = cosPalette(distortionMix + scrollAmount * 0.45, brightness, contrast, oscillation, phase);
-  wireColor += vec3(min(u_deep_purple * (1.0 - scrollAmount), 1.0), 0.0, 0.5) * 0.8;
 
-  vec3 bg = vec3(0.015, 0.0, 0.045) + getPaletteColor(scrollAmount) * 0.035;
-  vec3 finalColor = bg + wireColor * (visibleWire * min(u_opacity, 1.0) + visibleGlow);
-  fragColor = vec4(finalColor, 1.0);
+  vec3 color = cosPalette(distort + scrollAmount * 0.24, brightness, contrast, oscillation, phase);
+  float deepPurple = min(u_deep_purple * (1.0 - scrollAmount), 1.0);
+  float opacity = mix(0.34, min(u_opacity, 1.0), scrollAmount);
+  float lineEnergy = max(abs(vDistortion), 0.28);
+
+  fragColor = vec4(color * 1.8, lineEnergy * opacity);
+  fragColor += vec4(deepPurple, 0.0, 0.5, opacity * 0.9);
 }
 `
   }

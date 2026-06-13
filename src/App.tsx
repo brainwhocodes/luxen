@@ -331,7 +331,7 @@ export default function App() {
       if (pattern.id === 'lumen-holo-dice' && !codeToLoad.includes('u_original')) {
         codeToLoad = pattern.shaderSource ?? '';
       }
-      if (pattern.id === 'lumen-scroll-wave' && !codeToLoad.includes('vec2(u_time')) {
+      if (pattern.id === 'lumen-scroll-wave' && !codeToLoad.includes('vDistortion')) {
         codeToLoad = pattern.shaderSource ?? '';
       }
       setCodeSource(codeToLoad);
@@ -467,11 +467,16 @@ export default function App() {
     const canvas = canvasRef.current;
     
     let positionBuffer: WebGLBuffer | null = null;
+    let normalBuffer: WebGLBuffer | null = null;
+    let uvBuffer: WebGLBuffer | null = null;
     let vao: WebGLVertexArrayObject | null = null;
     let localProgram: WebGLProgram | null = null;
     let vertexShader: WebGLShader | null = null;
     let fragmentShader: WebGLShader | null = null;
+    let drawMode = 0x0004;
+    let drawCount = 6;
 
+    const useIcosahedronLines = selectedPattern.webglGeometry === 'icosahedron-lines';
     const gl = canvas && isWebGL ? canvas.getContext('webgl2') : null;
     if (isWebGL) {
       if (!gl) {
@@ -480,26 +485,82 @@ export default function App() {
       }
       glRef.current = gl;
 
-      // Full screen quad geometry
-      positionBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      const positions = new Float32Array([
-        -1, -1,
-         1, -1,
-        -1,  1,
-        -1,  1,
-         1, -1,
-         1,  1,
-      ]);
-      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
-      // Vertex shader source
-      const vsSource = `#version 300 es
+      const vsSource = selectedPattern.vertexShaderSource ?? `#version 300 es
         in vec2 position;
         void main() {
           gl_Position = vec4(position, 0.0, 1.0);
         }
       `;
+
+      const buildIcosahedronLineGeometry = () => {
+        type Vec3 = readonly [number, number, number];
+        const phi = 1.61803398875;
+        const normalize3 = ([x, y, z]: Vec3): Vec3 => {
+          const len = Math.hypot(x, y, z);
+          return [x / len, y / len, z / len] as const;
+        };
+        const mix3 = (a: Vec3, b: Vec3, t: number): Vec3 =>
+          normalize3([
+            a[0] * (1 - t) + b[0] * t,
+            a[1] * (1 - t) + b[1] * t,
+            a[2] * (1 - t) + b[2] * t
+          ]);
+        const distance3 = (a: Vec3, b: Vec3): number =>
+          Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+
+        const baseVertices: Vec3[] = [
+          [0, 1, phi], [0, -1, phi], [0, 1, -phi], [0, -1, -phi],
+          [1, phi, 0], [-1, phi, 0], [1, -phi, 0], [-1, -phi, 0],
+          [phi, 0, 1], [-phi, 0, 1], [phi, 0, -1], [-phi, 0, -1]
+        ];
+        const sourceVertices = baseVertices.map(normalize3);
+
+        const positions: number[] = [];
+        const normals: number[] = [];
+        const uvs: number[] = [];
+        const pushVertex = (vertex: Vec3) => {
+          const [x, y, z] = vertex;
+          positions.push(x, y, z);
+          normals.push(x, y, z);
+          uvs.push(0.5 + Math.atan2(z, x) / 6.28318530718, 0.5 - Math.asin(y) / 3.14159265359);
+        };
+        const pushLine = (a: Vec3, b: Vec3) => {
+          pushVertex(a);
+          pushVertex(b);
+        };
+
+        const faces: Array<readonly [Vec3, Vec3, Vec3]> = [];
+        for (let i = 0; i < sourceVertices.length; i += 1) {
+          for (let j = i + 1; j < sourceVertices.length; j += 1) {
+            for (let k = j + 1; k < sourceVertices.length; k += 1) {
+              const a = sourceVertices[i];
+              const b = sourceVertices[j];
+              const c = sourceVertices[k];
+              if (distance3(a, b) < 1.08 && distance3(b, c) < 1.08 && distance3(c, a) < 1.08) {
+                faces.push([a, b, c]);
+              }
+            }
+          }
+        }
+
+        const detail = 22;
+        faces.forEach(([a, b, c]) => {
+          for (let i = 0; i <= detail; i += 1) {
+            const t = i / detail;
+            pushLine(mix3(a, c, t), mix3(b, c, t));
+            pushLine(mix3(a, b, t), mix3(c, b, t));
+            pushLine(mix3(a, b, t), mix3(a, c, t));
+          }
+        });
+
+        return {
+          positions: new Float32Array(positions),
+          normals: new Float32Array(normals),
+          uvs: new Float32Array(uvs),
+          count: positions.length / 3
+        };
+      };
 
       const compileShader = (source: string, type: number): WebGLShader | null => {
         const shader = gl.createShader(type);
@@ -573,12 +634,60 @@ export default function App() {
       }
 
       if (programRef.current) {
-        const positionAttributeLocation = gl.getAttribLocation(programRef.current, 'position');
         vao = gl.createVertexArray();
         vaoRef.current = vao;
         gl.bindVertexArray(vao);
-        gl.enableVertexAttribArray(positionAttributeLocation);
-        gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+        if (useIcosahedronLines) {
+          const geometry = buildIcosahedronLineGeometry();
+          drawMode = gl.LINES;
+          drawCount = geometry.count;
+
+          positionBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, geometry.positions, gl.STATIC_DRAW);
+          const positionAttributeLocation = gl.getAttribLocation(programRef.current, 'position');
+          if (positionAttributeLocation >= 0) {
+            gl.enableVertexAttribArray(positionAttributeLocation);
+            gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+          }
+
+          normalBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, geometry.normals, gl.STATIC_DRAW);
+          const normalAttributeLocation = gl.getAttribLocation(programRef.current, 'normal');
+          if (normalAttributeLocation >= 0) {
+            gl.enableVertexAttribArray(normalAttributeLocation);
+            gl.vertexAttribPointer(normalAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+          }
+
+          uvBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, geometry.uvs, gl.STATIC_DRAW);
+          const uvAttributeLocation = gl.getAttribLocation(programRef.current, 'uv');
+          if (uvAttributeLocation >= 0) {
+            gl.enableVertexAttribArray(uvAttributeLocation);
+            gl.vertexAttribPointer(uvAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+          }
+        } else {
+          drawMode = gl.TRIANGLES;
+          drawCount = 6;
+          positionBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,
+             1, -1,
+            -1,  1,
+            -1,  1,
+             1, -1,
+             1,  1,
+          ]), gl.STATIC_DRAW);
+          const positionAttributeLocation = gl.getAttribLocation(programRef.current, 'position');
+          if (positionAttributeLocation >= 0) {
+            gl.enableVertexAttribArray(positionAttributeLocation);
+            gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+          }
+        }
       }
     }
 
@@ -656,8 +765,14 @@ export default function App() {
             }
           }
         });
+        if (useIcosahedronLines) {
+          currentGl.enable(currentGl.BLEND);
+          currentGl.blendFunc(currentGl.SRC_ALPHA, currentGl.ONE);
+        } else {
+          currentGl.disable(currentGl.BLEND);
+        }
 
-        currentGl.drawArrays(currentGl.TRIANGLES, 0, 6);
+        currentGl.drawArrays(drawMode, 0, drawCount);
 
         if (exportPendingRef.current) {
           exportPendingRef.current = false;
@@ -694,6 +809,12 @@ export default function App() {
         }
         if (vao) {
           gl.deleteVertexArray(vao);
+        }
+        if (normalBuffer) {
+          gl.deleteBuffer(normalBuffer);
+        }
+        if (uvBuffer) {
+          gl.deleteBuffer(uvBuffer);
         }
       }
     };

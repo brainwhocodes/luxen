@@ -117,6 +117,8 @@ export interface ShaderPattern {
   previewSnapshotUrl: string;
   renderEngine: RenderEngine;
   shaderSource?: string;
+  vertexShaderSource?: string;
+  webglGeometry?: WebGLGeometry;
   cssSource?: string;
   cssEffect?: CssEffectRecipe;
   defaultParameters: EditorParameter[];
@@ -125,3 +127,5 @@ export interface ShaderPattern {
   useCases: string[];
   unsplashUrl?: string;
 }
+export type WebGLGeometry = "fullscreen" | "icosahedron-lines";
+
