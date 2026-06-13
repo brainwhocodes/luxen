@@ -8,7 +8,8 @@ import {
   Shuffle,
   ArrowSquareOut,
   CaretDown,
-  Sparkle
+  Sparkle,
+  ArrowsLeftRight
 } from '@phosphor-icons/react';
 
 import { defaultPatterns } from './patternsData';
@@ -270,6 +271,7 @@ export default function App() {
 
   // Advanced section collapse state
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
+  const [comparePercent, setComparePercent] = useState<number>(50);
   // Filter and classify parameters
   const visibleParams = parameters.filter(p => {
     if (selectedPattern.id === 'lumen-reeded-glass' && p.key === 'scale') {
@@ -1144,18 +1146,51 @@ ${stylesObject}
             )}
 
             {selectedPattern.renderEngine === 'css' && (
-              <div 
-                className="css-preview-container" 
-                style={{
-                  backgroundImage: selectedPattern.unsplashUrl ? `url(${selectedPattern.unsplashUrl})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  ...cssVariablesStyle
-                }}
-              >
+              <div className="compare-slider-wrapper">
+                {/* Before (Unfiltered Background) */}
                 <div 
-                  className="css-preview-element" 
-                  style={cssVariablesStyle}
+                  className="css-preview-container before-layer" 
+                  style={{
+                    backgroundImage: selectedPattern.unsplashUrl ? `url(${selectedPattern.unsplashUrl})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                />
+
+                {/* After (Filtered Layer) */}
+                <div 
+                  className="css-preview-container after-layer" 
+                  style={{
+                    backgroundImage: selectedPattern.unsplashUrl ? `url(${selectedPattern.unsplashUrl})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    ...cssVariablesStyle,
+                    clipPath: `polygon(${comparePercent}% 0, 100% 0, 100% 100%, ${comparePercent}% 100%)`
+                  }}
+                >
+                  <div 
+                    className="css-preview-element" 
+                    style={cssVariablesStyle}
+                  />
+                </div>
+
+                {/* Visible Handle */}
+                <div className="compare-handle" style={{ left: `${comparePercent}%` }}>
+                  <div className="compare-handle-line" />
+                  <div className="compare-handle-button">
+                    <ArrowsLeftRight size={18} />
+                  </div>
+                </div>
+
+                {/* Invisible Range Input for Native Interaction */}
+                <input 
+                  type="range"
+                  className="compare-slider-input"
+                  min="0"
+                  max="100"
+                  value={comparePercent}
+                  onChange={(e) => setComparePercent(Number(e.target.value))}
+                  aria-label="Before and after comparison slider"
                 />
               </div>
             )}

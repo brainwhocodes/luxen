@@ -545,7 +545,7 @@ void main() {
     description: "Vibrating bands of neon cyan and magenta flowing over an Unsplash image using blending nodes.",
     thumbnailUrl: "/thumbnails/neon-tides.png",
     previewSnapshotUrl: "/thumbnails/neon-tides.png",
-    unsplashUrl: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80",
+    unsplashUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80",
     renderEngine: "css",
     tags: ["css", "neon", "unsplash", "blend"],
     useCases: ["Card glowing borders", "Accent panels"],
@@ -569,7 +569,7 @@ void main() {
 .css-preview-element {
   background-image: 
     linear-gradient(var(--sb-angle-deg), var(--sb-color-1), var(--sb-color-2)),
-    url("https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1200&q=80");
+    url("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80");
   background-size: cover;
   background-position: center;
   background-blend-mode: screen;
@@ -607,7 +607,7 @@ void main() {
     description: "A shimmering gold overlay that adds a vintage cinematic warmth to abstract fluid structures.",
     thumbnailUrl: "/thumbnails/golden-mist.png",
     previewSnapshotUrl: "/thumbnails/golden-mist.png",
-    unsplashUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+    unsplashUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80",
     renderEngine: "css",
     tags: ["css", "golden", "warm", "sepia"],
     useCases: ["Editorial sections", "Premium landing headers"],
@@ -631,7 +631,7 @@ void main() {
 .css-preview-element {
   background-image: 
     conic-gradient(from var(--sb-conic-angle-deg) at 50% 50%, var(--sb-color-1), var(--sb-color-2), var(--sb-color-3), var(--sb-color-1)),
-    url("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80");
+    url("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80");
   background-size: cover;
   background-position: center;
   background-blend-mode: overlay;
@@ -732,7 +732,7 @@ void main() {
     description: "Hybrid engine: WebGL Aurora flow in background with CSS glass bento card and SVG turbulence displacement overlay.",
     thumbnailUrl: "/thumbnails/dreamscape.png",
     previewSnapshotUrl: "/thumbnails/dreamscape.png",
-    unsplashUrl: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80",
+    unsplashUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80",
     renderEngine: "hybrid",
     tags: ["hybrid", "svg-filter", "glass", "aurora"],
     useCases: ["Landing hero", "Glass panel layers"],
@@ -796,7 +796,7 @@ void main() {
     description: "Frosted glass container with layered inner borders and shadows on top of an abstract Unsplash image.",
     thumbnailUrl: "/thumbnails/glass-blur-field.png",
     previewSnapshotUrl: "/thumbnails/glass-blur-field.png",
-    unsplashUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+    unsplashUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80",
     renderEngine: "css",
     tags: ["css", "glassmorphism", "blur", "card"],
     useCases: ["Bento boxes", "Modal background elements"],
@@ -817,7 +817,7 @@ void main() {
     ],
     cssSource: `/* CSS Frosted Glass Approximation with Edge Refraction */
 .css-preview-container {
-  background-image: url("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80");
+  background-image: url("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80");
   background-size: cover;
   background-position: center;
 }
@@ -863,7 +863,7 @@ void main() {
     description: "Animated metallic gradient clipped to large bold typography for premium headers.",
     thumbnailUrl: "/thumbnails/gradient-text-fill.png",
     previewSnapshotUrl: "/thumbnails/gradient-text-fill.png",
-    unsplashUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80",
+    unsplashUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80",
     renderEngine: "css",
     tags: ["css", "typography", "text-clip", "animated-gradient"],
     useCases: ["Landing hero headings", "CTA elements"],
