@@ -334,6 +334,9 @@ export default function App() {
       if (pattern.id === 'lumen-scroll-wave' && !codeToLoad.includes('vDistortion')) {
         codeToLoad = pattern.shaderSource ?? '';
       }
+      if (pattern.id === 'lumen-data-glyphs' && !codeToLoad.includes('LUMEN_DATA_GLYPHS_REDO')) {
+        codeToLoad = pattern.shaderSource ?? '';
+      }
       setCodeSource(codeToLoad);
       setCompileError(null);
       setLastValidShaderSource(codeToLoad);
