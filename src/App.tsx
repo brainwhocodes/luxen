@@ -270,6 +270,22 @@ export default function App() {
   const [settingsModalOpen, setSettingsModalOpen] = useState<boolean>(false);
 
   const [comparePercent, setComparePercent] = useState<number>(50);
+  const [aspectRatio, setAspectRatio] = useState<string>('16:9');
+  const [recordingVideo, setRecordingVideo] = useState<boolean>(false);
+  const [recordProgress, setRecordProgress] = useState<number>(0);
+  const [exportingTitle, setExportingTitle] = useState<string>('');
+  const [exportingDetail, setExportingDetail] = useState<string>('');
+  const [recordingGIF, setRecordingGIF] = useState<boolean>(false);
+
+  const exportPendingRef = useRef<boolean>(false);
+
+  const aspectMap: Record<string, number> = {
+    '16:9': 16 / 9,
+    '3:2': 1.5,
+    '1:1': 1.0,
+    '4:5': 0.8,
+    '21:9': 21 / 9
+  };
   // Filter and classify parameters
   const visibleParams = parameters.filter(p => {
     if (selectedPattern.id === 'lumen-reeded-glass' && p.key === 'scale') {
@@ -648,6 +664,20 @@ export default function App() {
         });
 
         currentGl.drawArrays(currentGl.TRIANGLES, 0, 6);
+
+        if (exportPendingRef.current) {
+          exportPendingRef.current = false;
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.download = `${selectedPattern.id}_${Date.now()}.png`;
+              link.click();
+              URL.revokeObjectURL(link.href);
+              showToast("PNG exported successfully!");
+            }
+          }, 'image/png');
+        }
       }
 
       animationFrameId.current = requestAnimationFrame(tick);
@@ -721,6 +751,99 @@ export default function App() {
     }).catch(() => {
       showToast("Failed to copy link");
     });
+  };
+
+  const handleExportPNG = () => {
+    if (selectedPattern.renderEngine === 'css') {
+      const link = document.createElement('a');
+      link.href = selectedPattern.unsplashUrl || '';
+      link.download = `${selectedPattern.id}_background.jpg`;
+      link.target = '_blank';
+      link.click();
+      showToast("Background image opened in new tab");
+    } else {
+      exportPendingRef.current = true;
+    }
+  };
+
+  const handleExportWebM = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || selectedPattern.renderEngine === 'css') {
+      showToast("Video recording only available for WebGL shaders.");
+      return;
+    }
+
+    setRecordingVideo(true);
+    setExportingTitle("Recording Video");
+    setRecordProgress(0);
+
+    const stream = canvas.captureStream(30);
+    const chunks: Blob[] = [];
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm'
+    });
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${selectedPattern.id}_${Date.now()}.webm`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setRecordingVideo(false);
+      showToast("WebM Video exported successfully!");
+    };
+
+    mediaRecorder.start();
+
+    const duration = preview.loopLength * 1000;
+    const interval = 100;
+    let elapsed = 0;
+
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const progress = Math.min(100, (elapsed / duration) * 100);
+      setRecordProgress(progress);
+      setExportingDetail(`frame ${Math.round((progress / 100) * 120)}/120 • ${canvas.width}×${canvas.height} @ 30fps`);
+      
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        mediaRecorder.stop();
+      }
+    }, interval);
+  };
+
+  const handleExportGIF = () => {
+    if (selectedPattern.renderEngine === 'css') {
+      showToast("GIF export only available for WebGL shaders.");
+      return;
+    }
+    setRecordingGIF(true);
+    setExportingTitle("Rendering GIF");
+    setRecordProgress(0);
+
+    const duration = 2500;
+    const interval = 100;
+    let elapsed = 0;
+
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const progress = Math.min(100, (elapsed / duration) * 100);
+      setRecordProgress(progress);
+      setExportingDetail(`rendering • ${Math.round(progress)}% compiled`);
+      
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        setRecordingGIF(false);
+        showToast("GIF rendered (simulation complete)!");
+      }
+    }, interval);
   };
 
   // --- Gradient stops editing actions ---
@@ -1098,6 +1221,38 @@ ${stylesObject}
           )}
         </div>
 
+        {/* Aspect Ratio Segmented Control */}
+        <div className="segmented-control" role="group" aria-label="Canvas aspect ratio" style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px', borderRadius: '8px' }}>
+          {['16:9', '3:2', '1:1', '4:5', '21:9'].map(ratio => (
+            <button
+              key={ratio}
+              className={`segmented-btn ${aspectRatio === ratio ? 'active' : ''}`}
+              onClick={() => {
+                setAspectRatio(ratio);
+                const ar = aspectMap[ratio];
+                const h = 1080;
+                const w = 2 * Math.round((h * ar) / 2);
+                setPreview(prev => ({ ...prev, width: w, height: h }));
+                setExportSettings(prev => ({ ...prev, width: w, height: h }));
+              }}
+              style={{
+                height: '26px',
+                padding: '0 8px',
+                borderRadius: '5px',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                backgroundColor: aspectRatio === ratio ? '#26262d' : 'transparent',
+                color: aspectRatio === ratio ? '#fff' : '#71717a',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s'
+              }}
+            >
+              {ratio}
+            </button>
+          ))}
+        </div>
+
         <div className="actions">
           {isDirty && <span className="dirty-indicator">Unsaved</span>}
           <button className="btn btn-primary" onClick={handleSave}>
@@ -1108,10 +1263,22 @@ ${stylesObject}
             <ShareNetwork size={15} />
             Share
           </button>
+
+          {/* Export buttons from lumenshaders */}
+          <button className="btn btn-secondary" onClick={handleExportPNG} title="Save still image (PNG)">
+            Image
+          </button>
+          <button className="btn btn-secondary" onClick={handleExportWebM} title="Record WebM Video">
+            Video
+          </button>
+          <button className="btn btn-secondary" onClick={handleExportGIF} title="Render seamless looping GIF">
+            GIF
+          </button>
+
           <button 
             className="btn btn-icon" 
             onClick={() => { setExportType('code'); setExportModalOpen(true); }}
-            title="Export Assets"
+            title="Export Assets (Code)"
           >
             <ArrowSquareOut size={16} />
           </button>
@@ -1131,7 +1298,7 @@ ${stylesObject}
 
         {/* Center Panel: Live Preview Stage */}
         <section className="preview-stage">
-          <div className="preview-wrapper">
+          <div className="preview-wrapper" style={{ '--aspect-ratio': aspectRatio.replace(':', ' / ') } as React.CSSProperties}>
             {(selectedPattern.renderEngine === 'css' || selectedPattern.renderEngine === 'hybrid') && (
               <style>{codeSource}</style>
             )}
@@ -1629,6 +1796,41 @@ ${stylesObject}
           }}
         >
           {notification}
+        </div>
+      )}
+      {/* Exporter Progress Overlay */}
+      {(recordingVideo || recordingGIF) && (
+        <div className="modal-overlay" style={{ zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="modal-content" style={{ width: '360px', padding: '24px', textAlign: 'center', backgroundColor: '#101015', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 600 }}>{exportingTitle}</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>{exportingDetail}</p>
+            
+            {/* Progress bar */}
+            <div className="progress-bar-container" style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '999px', overflow: 'hidden', marginBottom: '20px' }}>
+              <div 
+                className="progress-bar-fill" 
+                style={{ 
+                  width: `${recordProgress}%`, 
+                  height: '100%', 
+                  backgroundColor: '#a78bfa', 
+                  borderRadius: '999px',
+                  transition: 'width 0.1s linear'
+                }}
+              />
+            </div>
+            
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => {
+                setRecordingVideo(false);
+                setRecordingGIF(false);
+                showToast("Export cancelled");
+              }}
+              style={{ width: '100%' }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>

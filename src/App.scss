@@ -346,12 +346,19 @@ textarea {
   min-width: 0;
   min-height: 0;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 }
 
 .preview-wrapper {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
+  aspect-ratio: var(--aspect-ratio, 16 / 9);
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -366,7 +373,7 @@ textarea {
     height: 100%;
     display: block;
     border-radius: 14px;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .css-preview-container {
@@ -1071,5 +1078,36 @@ textarea {
 
   .panel {
     max-height: none;
+  }
+}
+
+.segmented-control {
+  display: inline-flex;
+  background-color: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmented-btn {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 5px;
+  font-family: $mono-font-stack;
+  font-size: 11px;
+  color: $text-muted;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+
+  &:hover {
+    color: $text-secondary;
+  }
+
+  &.active {
+    background-color: #26262d !important;
+    color: #ffffff !important;
   }
 }
