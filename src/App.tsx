@@ -1192,34 +1192,6 @@ ${stylesObject}
           SHADERBUILD
         </div>
 
-        {/* Selected Pattern dropdown */}
-        <div className="pattern-selector-container" style={{ position: 'relative' }}>
-          <button 
-            className="pattern-picker-trigger"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            aria-haspopup="listbox"
-            aria-expanded={dropdownOpen}
-          >
-            <span>{docName}</span>
-            <CaretDown size={14} />
-          </button>
-          
-          {dropdownOpen && (
-            <div className="dropdown-menu" role="listbox">
-              {patterns.map(p => (
-                <div
-                  key={p.id}
-                  className={`dropdown-item ${p.id === selectedPattern.id ? 'active' : ''}`}
-                  onClick={() => handleSelectPattern(p)}
-                  role="option"
-                  aria-selected={p.id === selectedPattern.id}
-                >
-                  {p.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Aspect Ratio Segmented Control */}
         <div className="segmented-control" role="group" aria-label="Canvas aspect ratio" style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px', borderRadius: '8px' }}>
@@ -1255,6 +1227,35 @@ ${stylesObject}
 
         <div className="actions">
           {isDirty && <span className="dirty-indicator">Unsaved</span>}
+
+          {/* Selected Pattern dropdown moved to top right */}
+          <div className="pattern-selector-container" style={{ position: 'relative' }}>
+            <button 
+              className="btn btn-secondary pattern-picker-trigger"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              aria-haspopup="listbox"
+              aria-expanded={dropdownOpen}
+            >
+              <span>{docName}</span>
+              <CaretDown size={14} />
+            </button>
+            
+            {dropdownOpen && (
+              <div className="dropdown-menu" role="listbox" style={{ right: 0 }}>
+                {patterns.map(p => (
+                  <div
+                    key={p.id}
+                    className={`dropdown-item ${p.id === selectedPattern.id ? 'active' : ''}`}
+                    onClick={() => handleSelectPattern(p)}
+                    role="option"
+                    aria-selected={p.id === selectedPattern.id}
+                  >
+                    {p.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="btn btn-primary" onClick={handleSave}>
             <FloppyDisk size={15} />
             Save
