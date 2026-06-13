@@ -1,3 +1,4 @@
+import { Slider } from '@base-ui/react';
 import React from 'react';
 import { ShuffleIcon } from './atoms';
 import type { ShaderPattern, GradientPalette } from '../types';
@@ -64,14 +65,21 @@ export const ControlRow: React.FC<ControlRowProps> = ({ label, value, min = 0, m
       <span className="val">{value.toFixed(2)}</span>
     </div>
     <div className="slider-wrapper">
-      <input 
-        type="range"
+      <Slider.Root
+        value={value}
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
+        onValueChange={(val) => onChange(Array.isArray(val) ? val[0] : val)}
+        className="base-slider"
+      >
+        <Slider.Control className="base-slider-control">
+          <Slider.Track className="base-slider-track">
+            <Slider.Indicator className="base-slider-indicator" />
+            <Slider.Thumb className="base-slider-thumb" aria-label={label} />
+          </Slider.Track>
+        </Slider.Control>
+      </Slider.Root>
     </div>
   </div>
 );
@@ -92,15 +100,21 @@ export const SeedControl: React.FC<SeedControlProps> = ({ label, value, min = 0,
       <span className="val">{Math.round(value)}</span>
     </div>
     <div className="slider-wrapper">
-      <input 
-        type="range"
+      <Slider.Root
+        value={value}
         min={min}
         max={max}
         step={1}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-label="Shader seed slider"
-      />
+        onValueChange={(val) => onChange(Array.isArray(val) ? val[0] : val)}
+        className="base-slider"
+      >
+        <Slider.Control className="base-slider-control">
+          <Slider.Track className="base-slider-track">
+            <Slider.Indicator className="base-slider-indicator" />
+            <Slider.Thumb className="base-slider-thumb" aria-label={label} />
+          </Slider.Track>
+        </Slider.Control>
+      </Slider.Root>
       <button
         type="button"
         className="btn btn-secondary roll-btn"

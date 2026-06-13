@@ -606,6 +606,7 @@ textarea {
         border: 1px solid rgba(167, 139, 250, 0.22);
       }
 
+
       &.css {
         color: #fb7185;
         border: 1px solid rgba(251, 113, 133, 0.22);
@@ -971,6 +972,46 @@ textarea {
     align-items: center;
     gap: 12px;
     width: 100%;
+
+    .base-slider {
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .base-slider-control {
+      width: 100%;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .base-slider-track {
+      width: 100%;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.2);
+      position: relative;
+    }
+
+    .base-slider-indicator {
+      height: 100%;
+      border-radius: 999px;
+      background: $accent-violet;
+      position: absolute;
+    }
+
+    .base-slider-thumb {
+      width: 15px;
+      height: 15px;
+      border-radius: 999px;
+      background: #a855f7;
+      box-shadow: 0 0 18px rgba(124, 58, 237, 0.45);
+      cursor: pointer;
+      outline: none;
+    }
 
     input[type="range"] {
       width: 100%;

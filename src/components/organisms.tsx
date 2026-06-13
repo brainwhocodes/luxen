@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tabs, Dialog } from '@base-ui/react';
 import { 
   SaveIcon, 
   SettingsIcon, 
@@ -188,8 +189,9 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
       )}
 
       {selectedPattern.renderEngine !== 'css' && (
-        <canvas ref={canvasRef} width={preview.width} height={preview.height} />
+        <canvas key={`${selectedPattern.renderEngine}-${selectedPattern.id}`} ref={canvasRef} width={preview.width} height={preview.height} />
       )}
+
 
       {compileError && (
         <div className="compile-overlay">{compileError}</div>
@@ -389,7 +391,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
     <section className="panel parameters-panel">
       <div className="panel-header">
         <h2>{selectedPattern.name}</h2>
-        <span className={`badge ${selectedPattern.renderEngine === 'webgl2' ? 'webgl2' : selectedPattern.renderEngine === 'css' ? 'css' : 'hybrid'}`}>
+        <span className={`badge ${selectedPattern.renderEngine}`}>
           {selectedPattern.renderEngine === 'webgl2' ? 'WebGL 2' : selectedPattern.renderEngine === 'css' ? 'CSS Native' : 'Hybrid Engine'}
         </span>
       </div>
@@ -400,17 +402,19 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
         {/* 1. Patterns Grid */}
         <div className="section-group">
           <div className="group-header">Patterns</div>
-          <div className="patterns-tabs">
-            {['All', 'WebGL 2', 'CSS / Hybrid', 'Animated'].map(tab => (
-              <button
-                key={tab}
-                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          <Tabs.Root value={activeTab} onValueChange={(val) => val && setActiveTab(val)}>
+            <Tabs.List className="patterns-tabs">
+              {['All', 'WebGL 2', 'CSS / Hybrid', 'Animated'].map(tab => (
+                <Tabs.Tab
+                  key={tab}
+                  value={tab}
+                  className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+                >
+                  {tab}
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.Root>
           <div className="patterns-grid">
             {filteredPatterns.map(p => (
               <PatternCard 
@@ -615,140 +619,130 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   executeExportWebM,
   executeExportGIF
 }) => {
-  if (!exportModalKind) return null;
-
   return (
-    <div className="modal-backdrop" onClick={() => setExportModalKind(null)}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-head">
-          <div>
-            <div className="modal-title">
-              {exportModalKind === 'png' ? 'Export image' : exportModalKind === 'video' ? 'Export video' : 'Export GIF'}
+    <Dialog.Root open={exportModalKind !== null} onOpenChange={(open) => { if (!open) setExportModalKind(null); }}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="modal-backdrop" style={{ zIndex: 400 }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 401, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', padding: '24px' }}>
+          <Dialog.Popup className="modal-card" style={{ pointerEvents: 'auto' }}>
+            <div className="modal-head">
+              <div>
+                <Dialog.Title className="modal-title">
+                  {exportModalKind === 'png' ? 'Export image' : exportModalKind === 'video' ? 'Export video' : 'Export GIF'}
+                </Dialog.Title>
+                <Dialog.Description className="modal-sub">
+                  {selectedPattern.name} • seed {Math.round(parameters.find(p => p.key === 'seed')?.value as number || 0)}
+                </Dialog.Description>
+              </div>
+              <Dialog.Close className="modal-close" aria-label="Close export dialog">
+                <svg viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" strokeWidth="1.6" fill="none"/></svg>
+              </Dialog.Close>
             </div>
-            <div className="modal-sub">
-              {selectedPattern.name} • seed {Math.round(parameters.find(p => p.key === 'seed')?.value as number || 0)}
+
+            <div className="modal-preview">
+              <canvas 
+                ref={modalCanvasRef} 
+                width={480} 
+                height={Math.round(480 / aspectMap[aspectRatio])}
+              />
+              <div className="modal-preview-meta mono">
+                {exportModalKind === 'png' && `${Math.round(parseInt(imgRes, 10) * aspectMap[aspectRatio])} × ${imgRes} px`}
+                {exportModalKind === 'video' && `${Math.round(parseInt(vidRes, 10) * aspectMap[aspectRatio])} × ${vidRes} • ${vidFps} fps`}
+                {exportModalKind === 'gif' && `${gifW} × ${Math.round(parseInt(gifW, 10) / aspectMap[aspectRatio])} • ${gifFps} fps`}
+              </div>
             </div>
-          </div>
-          <button className="modal-close" onClick={() => setExportModalKind(null)} aria-label="Close export dialog">
-            <svg viewBox="0 0 12 12"><path d="M2 2 L10 10 M10 2 L2 10" stroke="currentColor" strokeWidth="1.6" fill="none"/></svg>
-          </button>
-        </div>
 
-        <div className="modal-preview">
-          <canvas 
-            ref={modalCanvasRef} 
-            width={480} 
-            height={Math.round(480 / aspectMap[aspectRatio])}
-          />
-          <div className="modal-preview-meta mono">
-            {exportModalKind === 'png' && `${Math.round(parseInt(imgRes, 10) * aspectMap[aspectRatio])} × ${imgRes} px`}
-            {exportModalKind === 'video' && `${Math.round(parseInt(vidRes, 10) * aspectMap[aspectRatio])} × ${vidRes} • ${vidFps} fps`}
-            {exportModalKind === 'gif' && `${gifW} × ${Math.round(parseInt(gifW, 10) / aspectMap[aspectRatio])} • ${gifFps} fps`}
-          </div>
-        </div>
+            <div className="modal-form">
+              {exportModalKind === 'png' && (
+                <div className="field-row">
+                  <span className="ctl-label">Resolution</span>
+                  <select value={imgRes} onChange={(e) => setImgRes(e.target.value)}>
+                    <option value="720">{`${Math.round(720 * aspectMap[aspectRatio])} × 720`}</option>
+                    <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
+                    <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160 (4K)`}</option>
+                  </select>
+                </div>
+              )}
 
-        <div className="modal-form">
-          {exportModalKind === 'png' && (
-            <div className="field-row">
-              <span className="ctl-label">Resolution</span>
-              <select value={imgRes} onChange={(e) => setImgRes(e.target.value)}>
-                <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
-                <option value="1440">{`${Math.round(1440 * aspectMap[aspectRatio])} × 1440`}</option>
-                <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160`}</option>
-              </select>
+              {exportModalKind === 'video' && (
+                <>
+                  <div className="field-row">
+                    <span className="ctl-label">Resolution</span>
+                    <select value={vidRes} onChange={(e) => setVidRes(e.target.value)}>
+                      <option value="720">{`${Math.round(720 * aspectMap[aspectRatio])} × 720`}</option>
+                      <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Frame rate</span>
+                    <select value={vidFps} onChange={(e) => setVidFps(e.target.value)}>
+                      <option value="30">30 fps</option>
+                      <option value="60">60 fps</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Duration</span>
+                    <select value={vidLen} onChange={(e) => setVidLen(e.target.value)}>
+                      <option value="l2">2 seconds (loop)</option>
+                      <option value="l5">5 seconds</option>
+                      <option value="l10">10 seconds</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {exportModalKind === 'gif' && (
+                <>
+                  <div className="field-row">
+                    <span className="ctl-label">Width</span>
+                    <select value={gifW} onChange={(e) => setGifW(e.target.value)}>
+                      <option value="320">320 px</option>
+                      <option value="480">480 px</option>
+                      <option value="640">640 px</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Frame rate</span>
+                    <select value={gifFps} onChange={(e) => setGifFps(e.target.value)}>
+                      <option value="15">15 fps</option>
+                      <option value="25">25 fps</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Dither</span>
+                    <select value={gifDither ? 'true' : 'false'} onChange={(e) => setGifDither(e.target.value === 'true')}>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div className="field-row">
+                    <span className="ctl-label">Loop forever</span>
+                    <select value={gifLoop ? 'true' : 'false'} onChange={(e) => setGifLoop(e.target.value === 'true')}>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
-          )}
 
-          {exportModalKind === 'video' && (
-            <>
-              <div className="field-row">
-                <span className="ctl-label">Resolution</span>
-                <select value={vidRes} onChange={(e) => setVidRes(e.target.value)}>
-                  <option value="720">720p</option>
-                  <option value="1080">1080p</option>
-                  <option value="1440">1440p</option>
-                </select>
-              </div>
-              <div className="field-row">
-                <span className="ctl-label">Frame rate</span>
-                <select value={vidFps} onChange={(e) => setVidFps(e.target.value)}>
-                  <option value="24">24 fps</option>
-                  <option value="30">30 fps</option>
-                  <option value="60">60 fps</option>
-                </select>
-              </div>
-              <div className="field-row">
-                <span className="ctl-label">Length</span>
-                <select value={vidLen} onChange={(e) => setVidLen(e.target.value)}>
-                  <option value="l1">1 loop</option>
-                  <option value="l2">2 loops</option>
-                  <option value="l3">3 loops</option>
-                  <option value="l4">4 loops</option>
-                  <option value="l6">6 loops</option>
-                  <option value="l8">8 loops</option>
-                  <option value="s5">5 seconds</option>
-                  <option value="s10">10 seconds</option>
-                  <option value="s15">15 seconds</option>
-                  <option value="s30">30 seconds</option>
-                  <option value="s60">60 seconds</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {exportModalKind === 'gif' && (
-            <>
-              <div className="field-row">
-                <span className="ctl-label">Width</span>
-                <select value={gifW} onChange={(e) => setGifW(e.target.value)}>
-                  <option value="360">360 px</option>
-                  <option value="480">480 px</option>
-                  <option value="640">640 px</option>
-                  <option value="800">800 px</option>
-                </select>
-              </div>
-              <div className="field-row">
-                <span className="ctl-label">Frame rate</span>
-                <select value={gifFps} onChange={(e) => setGifFps(e.target.value)}>
-                  <option value="15">15 fps</option>
-                  <option value="20">20 fps</option>
-                  <option value="25">25 fps</option>
-                  <option value="30">30 fps</option>
-                </select>
-              </div>
-              <div className="field-row">
-                <span className="ctl-label">Dithering</span>
-                <select value={gifDither ? 'true' : 'false'} onChange={(e) => setGifDither(e.target.value === 'true')}>
-                  <option value="true">Enabled</option>
-                  <option value="false">Disabled</option>
-                </select>
-              </div>
-              <div className="field-row">
-                <span className="ctl-label">Loop forever</span>
-                <select value={gifLoop ? 'true' : 'false'} onChange={(e) => setGifLoop(e.target.value === 'true')}>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-            </>
-          )}
+            <div className="modal-actions">
+              <button 
+                className="btn btn-primary modal-dl"
+                onClick={() => {
+                  if (exportModalKind === 'png') executeExportPNG();
+                  if (exportModalKind === 'video') executeExportWebM();
+                  if (exportModalKind === 'gif') executeExportGIF();
+                }}
+              >
+                <svg viewBox="0 0 16 16" style={{ width: '14px', height: '14px', marginRight: '6px' }}><path d="M8 2 V10 M4.5 7 L8 10.5 L11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6"/><path d="M3 13.5 H13" stroke="currentColor" strokeWidth="1.6"/></svg>
+                Download {exportModalKind === 'png' ? 'PNG' : exportModalKind === 'video' ? 'WebM' : 'GIF'}
+              </button>
+            </div>
+          </Dialog.Popup>
         </div>
-
-        <div className="modal-actions">
-          <button 
-            className="btn btn-primary modal-dl"
-            onClick={() => {
-              if (exportModalKind === 'png') executeExportPNG();
-              if (exportModalKind === 'video') executeExportWebM();
-              if (exportModalKind === 'gif') executeExportGIF();
-            }}
-          >
-            <svg viewBox="0 0 16 16" style={{ width: '14px', height: '14px', marginRight: '6px' }}><path d="M8 2 V10 M4.5 7 L8 10.5 L11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6"/><path d="M3 13.5 H13" stroke="currentColor" stroke-width="1.6"/></svg>
-            Download {exportModalKind === 'png' ? 'PNG' : exportModalKind === 'video' ? 'WebM' : 'GIF'}
-          </button>
-        </div>
-      </div>
-    </div>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };
 
@@ -765,50 +759,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   preview,
   setPreview
 }) => {
-  if (!settingsModalOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={() => setSettingsModalOpen(false)}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3>Settings</h3>
-        <p>Customize the workspace layout, resolution targets, and performance preferences.</p>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Canvas Resolution</span>
-            <select 
-              value={`${preview.width}x${preview.height}`}
-              onChange={(e) => {
-                const [w, h] = e.target.value.split('x').map(Number);
-                setPreview(prev => ({ ...prev, width: w, height: h }));
-              }}
-              style={{ backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px' }}
-            >
-              <option value="1920x1080">Full HD (1920×1080)</option>
-              <option value="1080x1080">Square (1080×1080)</option>
-              <option value="1080x1920">Vertical (1080×1920)</option>
-              <option value="1440x900">MacBook (1440×900)</option>
-            </select>
-          </div>
+    <Dialog.Root open={settingsModalOpen} onOpenChange={setSettingsModalOpen}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="modal-overlay" style={{ zIndex: 200 }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 201, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <Dialog.Popup className="modal-content" style={{ pointerEvents: 'auto' }}>
+            <Dialog.Title style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: 650, color: '#fff' }}>Settings</Dialog.Title>
+            <Dialog.Description style={{ margin: '0 0 20px', color: '#a1a1aa', fontSize: '13px', lineHeight: '1.45' }}>Customize the workspace layout, resolution targets, and performance preferences.</Dialog.Description>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Canvas Resolution</span>
+                <select 
+                  value={`${preview.width}x${preview.height}`}
+                  onChange={(e) => {
+                    const [w, h] = e.target.value.split('x').map(Number);
+                    setPreview(prev => ({ ...prev, width: w, height: h }));
+                  }}
+                  style={{ backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px' }}
+                >
+                  <option value="1920x1080">Full HD (1920×1080)</option>
+                  <option value="1080x1080">Square (1080×1080)</option>
+                  <option value="1080x1920">Vertical (1080×1920)</option>
+                  <option value="1440x900">MacBook (1440×900)</option>
+                </select>
+              </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Loop Duration (seconds)</span>
-            <input 
-              type="number"
-              value={preview.loopLength}
-              onChange={(e) => setPreview(prev => ({ ...prev, loopLength: Number(e.target.value) }))}
-              style={{ width: '80px', backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px', fontFamily: 'monospace' }}
-            />
-          </div>
-        </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Loop Duration (seconds)</span>
+                <input 
+                  type="number"
+                  value={preview.loopLength}
+                  onChange={(e) => setPreview(prev => ({ ...prev, loopLength: Number(e.target.value) }))}
+                  style={{ width: '80px', backgroundColor: '#1a1921', color: '#fff', border: '1px solid #27272a', padding: '6px', borderRadius: '6px', fontFamily: 'monospace' }}
+                />
+              </div>
+            </div>
 
-        <div className="modal-actions">
-          <button className="btn btn-primary" onClick={() => setSettingsModalOpen(false)}>
-            Apply
-          </button>
+            <div className="modal-actions">
+              <Dialog.Close className="btn btn-primary">
+                Apply
+              </Dialog.Close>
+            </div>
+          </Dialog.Popup>
         </div>
-      </div>
-    </div>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };
 
@@ -831,65 +828,68 @@ export const CodeModal: React.FC<CodeModalProps> = ({
   generatedCSS,
   generatedReactComponent
 }) => {
-  if (!exportModalOpen) return null;
-
   return (
-    <div className="modal-overlay" onClick={() => setExportModalOpen(false)}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3>Export Assets</h3>
-        <p>Generate, copy, or download the visual styles and integration files representing this pattern.</p>
-        
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <button 
-            className={`btn ${exportType === 'code' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => setExportType('code')}
-          >
-            GLSL Source
-          </button>
-          <button 
-            className={`btn ${exportType === 'css-export' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => setExportType('css-export')}
-          >
-            CSS Source
-          </button>
-          <button 
-            className={`btn ${exportType === 'react' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => setExportType('react')}
-          >
-            React Snippet
-          </button>
+    <Dialog.Root open={exportModalOpen} onOpenChange={setExportModalOpen}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="modal-overlay" style={{ zIndex: 200 }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 201, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <Dialog.Popup className="modal-content" style={{ pointerEvents: 'auto' }}>
+            <Dialog.Title style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: 650, color: '#fff' }}>Export Assets</Dialog.Title>
+            <Dialog.Description style={{ margin: '0 0 20px', color: '#a1a1aa', fontSize: '13px', lineHeight: '1.45' }}>Generate, copy, or download the visual styles and integration files representing this pattern.</Dialog.Description>
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <button 
+                className={`btn ${exportType === 'code' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1 }}
+                onClick={() => setExportType('code')}
+              >
+                GLSL Source
+              </button>
+              <button 
+                className={`btn ${exportType === 'css-export' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1 }}
+                onClick={() => setExportType('css-export')}
+              >
+                CSS Source
+              </button>
+              <button 
+                className={`btn ${exportType === 'react' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1 }}
+                onClick={() => setExportType('react')}
+              >
+                React Snippet
+              </button>
+            </div>
+
+            {exportType === 'code' && (
+              <>
+                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>Fragment Shader Source Code:</label>
+                <textarea readOnly value={generatedGLSL} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
+              </>
+            )}
+
+            {exportType === 'css-export' && (
+              <>
+                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>CSS Snippet:</label>
+                <textarea readOnly value={generatedCSS} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
+              </>
+            )}
+
+            {exportType === 'react' && (
+              <>
+                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>React Custom Component Code:</label>
+                <textarea readOnly value={generatedReactComponent} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
+              </>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <Dialog.Close className="btn btn-secondary">
+                Close
+              </Dialog.Close>
+            </div>
+          </Dialog.Popup>
         </div>
-
-        {exportType === 'code' && (
-          <>
-            <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>Fragment Shader Source Code:</label>
-            <textarea readOnly value={generatedGLSL} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
-          </>
-        )}
-
-        {exportType === 'css-export' && (
-          <>
-            <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>CSS Snippet:</label>
-            <textarea readOnly value={generatedCSS} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
-          </>
-        )}
-
-        {exportType === 'react' && (
-          <>
-            <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>React Custom Component Code:</label>
-            <textarea readOnly value={generatedReactComponent} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
-          </>
-        )}
-
-        <div className="modal-actions" style={{ marginTop: '16px' }}>
-          <button className="btn btn-secondary" onClick={() => setExportModalOpen(false)}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };
