@@ -276,6 +276,17 @@ export default function App() {
   const [exportingTitle, setExportingTitle] = useState<string>('');
   const [exportingDetail, setExportingDetail] = useState<string>('');
   const [recordingGIF, setRecordingGIF] = useState<boolean>(false);
+  const [imgRes, setImgRes] = useState<string>('1080');
+  const [vidRes, setVidRes] = useState<string>('1080');
+  const [vidFps, setVidFps] = useState<string>('30');
+  const [vidLen, setVidLen] = useState<string>('l2');
+  const [gifW, setGifW] = useState<string>('640');
+  const [gifFps, setGifFps] = useState<string>('25');
+  const [gifDither, setGifDither] = useState<boolean>(true);
+  const [gifLoop, setGifLoop] = useState<boolean>(true);
+  const [exportModalKind, setExportModalKind] = useState<'png' | 'video' | 'gif' | null>(null);
+
+  const modalCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const exportPendingRef = useRef<boolean>(false);
 
@@ -705,6 +716,45 @@ export default function App() {
     };
   }, [selectedPattern, codeSource, palette, parameters, preview.loopLength]);
 
+  // Copy main canvas to export modal preview canvas in real-time
+  useEffect(() => {
+    if (!exportModalKind) return;
+    
+    let active = true;
+    const tick = () => {
+      if (!active) return;
+      const mainCanvas = canvasRef.current;
+      const modalCanvas = modalCanvasRef.current;
+      if (modalCanvas) {
+        const ctx = modalCanvas.getContext('2d');
+        if (ctx) {
+          if (mainCanvas) {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, modalCanvas.width, modalCanvas.height);
+            ctx.drawImage(mainCanvas, 0, 0, modalCanvas.width, modalCanvas.height);
+          } else if (selectedPattern.unsplashUrl) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = selectedPattern.unsplashUrl;
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, modalCanvas.width, modalCanvas.height);
+            };
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    
+    const timer = setTimeout(() => {
+      requestAnimationFrame(tick);
+    }, 50);
+    
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [exportModalKind]);
+
   // --- Parameter visual changes ---
   const handleParameterChange = (key: string, value: number | boolean) => {
     setParameters(prev => {
@@ -754,6 +804,19 @@ export default function App() {
   };
 
   const handleExportPNG = () => {
+    setExportModalKind('png');
+  };
+
+  const handleExportWebM = () => {
+    setExportModalKind('video');
+  };
+
+  const handleExportGIF = () => {
+    setExportModalKind('gif');
+  };
+
+  const executeExportPNG = () => {
+    setExportModalKind(null);
     if (selectedPattern.renderEngine === 'css') {
       const link = document.createElement('a');
       link.href = selectedPattern.unsplashUrl || '';
@@ -762,22 +825,40 @@ export default function App() {
       link.click();
       showToast("Background image opened in new tab");
     } else {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const h = parseInt(imgRes, 10);
+      const ar = aspectMap[aspectRatio];
+      const w = 2 * Math.round((h * ar) / 2);
+      
+      // Temporarily resize to target resolution
+      canvas.width = w;
+      canvas.height = h;
       exportPendingRef.current = true;
     }
   };
 
-  const handleExportWebM = async () => {
+  const executeExportWebM = () => {
     const canvas = canvasRef.current;
     if (!canvas || selectedPattern.renderEngine === 'css') {
       showToast("Video recording only available for WebGL shaders.");
       return;
     }
 
+    setExportModalKind(null);
     setRecordingVideo(true);
     setExportingTitle("Recording Video");
     setRecordProgress(0);
 
-    const stream = canvas.captureStream(30);
+    const h = parseInt(vidRes, 10);
+    const ar = aspectMap[aspectRatio];
+    const w = 2 * Math.round((h * ar) / 2);
+    
+    // Temporarily resize for high-res recording
+    canvas.width = w;
+    canvas.height = h;
+
+    const stream = canvas.captureStream(Number(vidFps));
     const chunks: Blob[] = [];
     const mediaRecorder = new MediaRecorder(stream, {
       mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
@@ -796,13 +877,28 @@ export default function App() {
       link.download = `${selectedPattern.id}_${Date.now()}.webm`;
       link.click();
       URL.revokeObjectURL(link.href);
+
+      // Restore to preview size
+      const previewAr = aspectMap[aspectRatio];
+      const previewH = 1080;
+      const previewW = 2 * Math.round((previewH * previewAr) / 2);
+      canvas.width = previewW;
+      canvas.height = previewH;
+
       setRecordingVideo(false);
       showToast("WebM Video exported successfully!");
     };
 
     mediaRecorder.start();
 
-    const duration = preview.loopLength * 1000;
+    let duration = preview.loopLength * 1000;
+    if (vidLen.startsWith('l')) {
+      const loops = parseInt(vidLen.slice(1), 10) || 1;
+      duration = preview.loopLength * loops * 1000;
+    } else if (vidLen.startsWith('s')) {
+      duration = parseInt(vidLen.slice(1), 10) * 1000;
+    }
+
     const interval = 100;
     let elapsed = 0;
 
@@ -810,7 +906,7 @@ export default function App() {
       elapsed += interval;
       const progress = Math.min(100, (elapsed / duration) * 100);
       setRecordProgress(progress);
-      setExportingDetail(`frame ${Math.round((progress / 100) * 120)}/120 • ${canvas.width}×${canvas.height} @ 30fps`);
+      setExportingDetail(`frame ${Math.round((progress / 100) * (duration / 1000 * Number(vidFps)))}/${Math.round(duration / 1000 * Number(vidFps))} • ${canvas.width}×${canvas.height} @ ${vidFps}fps`);
       
       if (elapsed >= duration) {
         clearInterval(timer);
@@ -819,7 +915,8 @@ export default function App() {
     }, interval);
   };
 
-  const handleExportGIF = () => {
+  const executeExportGIF = () => {
+    setExportModalKind(null);
     if (selectedPattern.renderEngine === 'css') {
       showToast("GIF export only available for WebGL shaders.");
       return;
@@ -1472,27 +1569,29 @@ ${stylesObject}
             <div>
               <div className="section-label">Gradient Palette</div>
               <div className="gradient-palette-creator">
-                <div className="palette-preset-grid" aria-label="Preset palettes">
-                  {palettePresets.map(preset => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className={`palette-preset-chip ${palette.name === preset.name ? 'active' : ''}`}
-                      onClick={() => handleApplyPalettePreset(preset)}
-                      aria-label={`Apply ${preset.name} palette`}
-                    >
-                      <span className="preset-chip-bars" aria-hidden="true">
+                <div className="preset-row" aria-label="Preset palettes">
+                  {palettePresets.map(preset => {
+                    const isActive = palette.name === preset.name ||
+                      (palette.stops.length === preset.stops.length && palette.stops.every((s, idx) => s.color === preset.stops[idx].color));
+
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        className={`preset-chip ${isActive ? 'active' : ''}`}
+                        onClick={() => handleApplyPalettePreset(preset)}
+                        title={preset.name}
+                        aria-label={`Apply ${preset.name} palette`}
+                      >
                         {preset.stops.map(stop => (
-                          <span
+                          <i
                             key={stop.id}
-                            className="preset-chip-bar"
                             style={{ backgroundColor: stop.color }}
                           />
                         ))}
-                      </span>
-                      <span className="preset-chip-name">{preset.name}</span>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
                 <div 
                   className="gradient-rail-container" 
@@ -1773,6 +1872,140 @@ ${stylesObject}
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={() => setSettingsModalOpen(false)}>
                 Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Export Settings Modal mimicking lumenshaders */}
+      {exportModalKind && (
+        <div className="modal-overlay" onClick={() => setExportModalKind(null)}>
+          <div className="modal-content" style={{ width: 'min(90vw, 560px)' }} onClick={(e) => e.stopPropagation()}>
+            <h3>
+              {exportModalKind === 'png' ? 'Export image' : exportModalKind === 'video' ? 'Export video' : 'Export GIF'}
+            </h3>
+            <p style={{ margin: '0 0 12px 0', fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>
+              {selectedPattern.name} • seed {Math.round(parameters.find(p => p.key === 'seed')?.value as number || 0)}
+            </p>
+
+            <div className="export-modal-grid">
+              {/* Left Column: Live Preview */}
+              <div className="modal-preview-container">
+                <canvas 
+                  ref={modalCanvasRef} 
+                  width={240} 
+                  height={Math.round(240 / aspectMap[aspectRatio])}
+                />
+                <div className="modal-preview-meta">
+                  {exportModalKind === 'png' && `${Math.round(parseInt(imgRes, 10) * aspectMap[aspectRatio])} × ${imgRes} px`}
+                  {exportModalKind === 'video' && `${Math.round(parseInt(vidRes, 10) * aspectMap[aspectRatio])} × ${vidRes} • ${vidFps} fps`}
+                  {exportModalKind === 'gif' && `${gifW} × ${Math.round(parseInt(gifW, 10) / aspectMap[aspectRatio])} • ${gifFps} fps`}
+                </div>
+              </div>
+
+              {/* Right Column: Settings Form */}
+              <div className="modal-form-fields">
+                {exportModalKind === 'png' && (
+                  <div className="field-row">
+                    <label>Resolution</label>
+                    <select value={imgRes} onChange={(e) => setImgRes(e.target.value)}>
+                      <option value="1080">{`${Math.round(1080 * aspectMap[aspectRatio])} × 1080`}</option>
+                      <option value="1440">{`${Math.round(1440 * aspectMap[aspectRatio])} × 1440`}</option>
+                      <option value="2160">{`${Math.round(2160 * aspectMap[aspectRatio])} × 2160 (4K)`}</option>
+                    </select>
+                  </div>
+                )}
+
+                {exportModalKind === 'video' && (
+                  <>
+                    <div className="field-row">
+                      <label>Resolution</label>
+                      <select value={vidRes} onChange={(e) => setVidRes(e.target.value)}>
+                        <option value="720">720p</option>
+                        <option value="1080">1080p</option>
+                        <option value="1440">1440p</option>
+                      </select>
+                    </div>
+                    <div className="field-row">
+                      <label>Frame rate</label>
+                      <select value={vidFps} onChange={(e) => setVidFps(e.target.value)}>
+                        <option value="24">24 fps</option>
+                        <option value="30">30 fps</option>
+                        <option value="60">60 fps</option>
+                      </select>
+                    </div>
+                    <div className="field-row">
+                      <label>Length</label>
+                      <select value={vidLen} onChange={(e) => setVidLen(e.target.value)}>
+                        <option value="l1">1 loop</option>
+                        <option value="l2">2 loops</option>
+                        <option value="l3">3 loops</option>
+                        <option value="l4">4 loops</option>
+                        <option value="l6">6 loops</option>
+                        <option value="l8">8 loops</option>
+                        <option value="s5">5 seconds</option>
+                        <option value="s10">10 seconds</option>
+                        <option value="s15">15 seconds</option>
+                        <option value="s30">30 seconds</option>
+                        <option value="s60">60 seconds</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {exportModalKind === 'gif' && (
+                  <>
+                    <div className="field-row">
+                      <label>Width</label>
+                      <select value={gifW} onChange={(e) => setGifW(e.target.value)}>
+                        <option value="360">360 px</option>
+                        <option value="480">480 px</option>
+                        <option value="640">640 px</option>
+                        <option value="800">800 px</option>
+                      </select>
+                    </div>
+                    <div className="field-row">
+                      <label>Frame rate</label>
+                      <select value={gifFps} onChange={(e) => setGifFps(e.target.value)}>
+                        <option value="15">15 fps</option>
+                        <option value="20">20 fps</option>
+                        <option value="25">25 fps</option>
+                        <option value="30">30 fps</option>
+                      </select>
+                    </div>
+                    <div className="field-row">
+                      <label>Dithering</label>
+                      <select value={gifDither ? 'true' : 'false'} onChange={(e) => setGifDither(e.target.value === 'true')}>
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                      </select>
+                    </div>
+                    <div className="field-row">
+                      <label>Loop forever</label>
+                      <select value={gifLoop ? 'true' : 'false'} onChange={(e) => setGifLoop(e.target.value === 'true')}>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setExportModalKind(null)}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  if (exportModalKind === 'png') executeExportPNG();
+                  if (exportModalKind === 'video') executeExportWebM();
+                  if (exportModalKind === 'gif') executeExportGIF();
+                }}
+              >
+                Download {exportModalKind === 'png' ? 'PNG' : exportModalKind === 'video' ? 'WebM' : 'GIF'}
               </button>
             </div>
           </div>
