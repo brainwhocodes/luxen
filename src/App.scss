@@ -28,12 +28,16 @@ $transition-default: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-font-smoothing: antialiased;
 }
 
+html {
+  overflow: hidden !important;
+}
+
 body {
   margin: 0;
   padding: 0;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow: hidden !important;
   background:
     radial-gradient(circle at 18% 0%, rgba(124, 58, 237, 0.12), transparent 26%),
     linear-gradient(180deg, #08080c 0%, $bg-primary 36%, #060609 100%);
@@ -248,7 +252,8 @@ textarea {
 }
 
 .code-panel {
-  width: 25%;
+  width: 350px;
+  flex: 0 0 350px;
   min-width: 350px;
 
   .language-toggle {
@@ -469,7 +474,8 @@ textarea {
 }
 
 .parameters-panel {
-  width: 25%;
+  width: 340px;
+  flex: 0 0 340px;
   min-width: 340px;
 
   .panel-body {
@@ -530,6 +536,7 @@ textarea {
 
   .patterns-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -1166,6 +1173,8 @@ textarea {
 
   .code-panel,
   .parameters-panel {
+    width: 290px;
+    flex: 0 0 290px;
     min-width: 290px;
   }
 }

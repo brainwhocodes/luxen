@@ -234,6 +234,7 @@ export function ShaderEditorTemplate({
           parameters={parameters}
           compileError={compileError}
           preview={preview}
+          codeSource={generatedGLSL}
         />
 
         {/* Right Panel: Parameters Panel Organism */}

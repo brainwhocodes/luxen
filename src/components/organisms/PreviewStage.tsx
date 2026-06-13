@@ -12,6 +12,7 @@ interface PreviewStageProps {
   parameters: EditorParameter[];
   compileError: string | null;
   preview: PreviewSettings;
+  codeSource: string;
 }
 
 export const PreviewStage: React.FC<PreviewStageProps> = ({
@@ -23,12 +24,16 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
   cssVariablesStyle,
   parameters,
   compileError,
-  preview
+  preview,
+  codeSource
 }) => (
   <section className="preview-stage">
     <div className="preview-wrapper" style={{ '--aspect-ratio': aspectRatio.replace(':', ' / ') } as React.CSSProperties}>
       {(selectedPattern.renderEngine === 'css' || selectedPattern.renderEngine === 'hybrid') && (
-        <div className="css-canvas-preview-layer" style={cssVariablesStyle} />
+        <>
+          <style>{codeSource}</style>
+          <div className="css-canvas-preview-layer" style={cssVariablesStyle} />
+        </>
       )}
 
       {selectedPattern.renderEngine !== 'css' && (
