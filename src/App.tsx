@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { KeyboardEvent, MouseEvent, TouchEvent } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { cpp } from '@codemirror/lang-cpp';
-import { css as codemirrorCss } from '@codemirror/lang-css';
 import {
   FloppyDisk,
   ShareNetwork,
@@ -692,11 +689,6 @@ export default function App() {
     setIsDirty(true);
   };
 
-  // --- Code Editor Debounce & Compile ---
-  const handleCodeChange = (value: string) => {
-    setCodeSource(value);
-    setIsDirty(true);
-  };
 
 
 
@@ -1136,53 +1128,6 @@ ${stylesObject}
       {/* Main Workspace (3 Panels) */}
       <main className="workspace">
         
-        {/* Left Panel: Code Panel */}
-        <section className="panel code-panel">
-          <div className="panel-header">
-            <h2>Code</h2>
-          </div>
-          <div className="panel-body">
-            <div className="language-toggle source-selector">
-              <span>
-                {selectedPattern.renderEngine === 'webgl2'
-                  ? 'GLSL (WebGL2)'
-                  : selectedPattern.renderEngine === 'hybrid'
-                    ? 'GLSL + CSS'
-                    : 'CSS Native'}
-              </span>
-              <CaretDown size={14} />
-            </div>
-
-            <CodeMirror
-              value={codeSource}
-              height="min(54vh, 520px)"
-              theme="dark"
-              extensions={
-                selectedPattern.renderEngine === 'webgl2' || selectedPattern.renderEngine === 'hybrid'
-                  ? [cpp()]
-                  : [codemirrorCss()]
-              }
-              onChange={handleCodeChange}
-            />
-
-            <div className="uniforms-section">
-              <div className="uniform-header">Uniforms</div>
-              {parameters.map(param => (
-                <div className="uniform-row" key={param.key}>
-                  <label>u_{param.key}</label>
-                  <div className="uniform-input-group">
-                    <input
-                      type="number"
-                      value={Number(param.value)}
-                      onChange={(e) => handleParameterChange(param.key, Number(e.target.value))}
-                      step={param.step ?? 0.05}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Center Panel: Live Preview Stage */}
         <section className="preview-stage">
