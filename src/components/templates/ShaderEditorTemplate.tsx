@@ -1,30 +1,25 @@
 import type { CSSProperties, Dispatch, KeyboardEvent, MouseEvent, RefObject, SetStateAction, TouchEvent } from 'react';
 
 import type { EditorParameter, GradientPalette, PreviewSettings, ShaderPattern } from '../../types';
-import { 
-  Header, 
-  PreviewStage, 
-  ParametersPanel, 
-  ExportModal, 
-  SettingsModal, 
-  CodeModal,
-  ExportProgressOverlay,
-  NotificationToast,
-  SetGeneratorModal 
-} from '../organisms';
+import { Header } from '../organisms/Header';
+import { PreviewStage } from '../organisms/PreviewStage';
+import { ParametersPanel } from '../organisms/ParametersPanel';
+import { ExportModal } from '../organisms/ExportModal';
+import { SettingsModal } from '../organisms/SettingsModal';
+import { CodeModal } from '../organisms/CodeModal';
+import { ExportProgressOverlay } from '../organisms/ExportProgressOverlay';
+import { NotificationToast } from '../organisms/NotificationToast';
+import { SetGeneratorModal } from '../organisms/SetGeneratorModal';
 
 type ExportType = 'code' | 'image' | 'react' | 'css-export';
 type ExportModalKind = 'png' | 'video' | 'gif' | null;
 
 interface ShaderEditorTemplateProps {
-  docName: string;
   isDirty: boolean;
   aspectRatio: string;
-  dropdownOpen: boolean;
   patterns: ShaderPattern[];
   selectedPattern: ShaderPattern;
   handleSelectPattern: (pattern: ShaderPattern) => void;
-  setDropdownOpen: (open: boolean) => void;
   setAspectRatio: (aspect: string) => void;
   handleSave: () => void;
   handleExportPNG: () => void;
@@ -55,9 +50,9 @@ interface ShaderEditorTemplateProps {
   handleAddStop: () => void;
   handleRemoveStop: (id: string) => void;
   handleUpdateStopColor: (id: string, color: string) => void;
-  handleStopMouseDown: (event: MouseEvent<HTMLDivElement>, id: string) => void;
-  handleStopTouchStart: (event: TouchEvent<HTMLDivElement>, id: string) => void;
-  handleStopKeyDown: (event: KeyboardEvent<HTMLDivElement>, id: string) => void;
+  handleStopMouseDown: (event: MouseEvent<HTMLElement>, id: string) => void;
+  handleStopTouchStart: (event: TouchEvent<HTMLElement>, id: string) => void;
+  handleStopKeyDown: (event: KeyboardEvent<HTMLElement>, id: string) => void;
   palettePresets: GradientPalette[];
   handleApplyPalettePreset: (preset: GradientPalette) => void;
   exportModalOpen: boolean;
@@ -107,14 +102,11 @@ interface ShaderEditorTemplateProps {
 }
 
 export function ShaderEditorTemplate({
-  docName,
   isDirty,
   aspectRatio,
-  dropdownOpen,
   patterns,
   selectedPattern,
   handleSelectPattern,
-  setDropdownOpen,
   setAspectRatio,
   handleSave,
   handleExportPNG,
@@ -199,14 +191,11 @@ export function ShaderEditorTemplate({
     <div className="editor-layout">
       {/* Top Bar Organism */}
       <Header 
-        docName={docName}
         isDirty={isDirty}
         aspectRatio={aspectRatio}
-        dropdownOpen={dropdownOpen}
         patterns={patterns}
         selectedPattern={selectedPattern}
         handleSelectPattern={handleSelectPattern}
-        setDropdownOpen={setDropdownOpen}
         setAspectRatio={setAspectRatio}
         handleSave={handleSave}
         handleExportPNG={handleExportPNG}

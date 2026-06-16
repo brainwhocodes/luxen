@@ -8,9 +8,12 @@ interface PatternCardProps {
 }
 
 export const PatternCard: React.FC<PatternCardProps> = ({ pattern, isSelected, onClick }) => (
-  <div 
+  <button 
+    type="button"
     className={`pattern-card ${isSelected ? 'active' : ''}`}
     onClick={onClick}
+    style={{ padding: 0, border: 'none', background: 'none', width: '100%', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+    aria-pressed={isSelected}
   >
     <div 
       className="thumbnail"
@@ -21,5 +24,5 @@ export const PatternCard: React.FC<PatternCardProps> = ({ pattern, isSelected, o
       </span>
     </div>
     <span className="name">{pattern.name}</span>
-  </div>
+  </button>
 );

@@ -31,6 +31,17 @@ interface ExportModalProps {
   executeExportGIF: () => void;
 }
 
+const containerStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 401,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  pointerEvents: 'none',
+  padding: '24px'
+};
+
 export const ExportModal: React.FC<ExportModalProps> = ({
   exportModalKind,
   setExportModalKind,
@@ -63,7 +74,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     <Dialog.Root open={exportModalKind !== null} onOpenChange={(open) => { if (!open) setExportModalKind(null); }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="modal-backdrop" style={{ zIndex: 400 }} />
-        <div style={{ position: 'fixed', inset: 0, zIndex: 401, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', padding: '24px' }}>
+        <div style={containerStyle}>
           <Dialog.Popup className="modal-card" style={{ pointerEvents: 'auto' }}>
             <div className="modal-head">
               <div>
@@ -168,6 +179,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
             <div className="modal-actions">
               <button 
+                type="button"
                 className="btn btn-primary modal-dl"
                 onClick={() => {
                   if (exportModalKind === 'png') executeExportPNG();

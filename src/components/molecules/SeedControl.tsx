@@ -1,6 +1,6 @@
 import { Slider } from '@base-ui/react';
 import React from 'react';
-import { ShuffleIcon } from '../atoms';
+import { ShuffleIcon } from '../atoms/ShuffleIcon';
 
 interface SeedControlProps {
   label: string;

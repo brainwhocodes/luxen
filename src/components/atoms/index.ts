@@ -2,7 +2,6 @@ export * from './DiceIcon';
 export * from './SaveIcon';
 export * from './ExportIcon';
 export * from './SettingsIcon';
-export * from './ArrowDownIcon';
 export * from './ArrowsLeftRightIcon';
 export * from './StarsIcon';
 export * from './ShuffleIcon';

@@ -11,6 +11,19 @@ interface CodeModalProps {
   generatedReactComponent: string;
 }
 
+const textareaStyle: React.CSSProperties = {
+  width: '100%',
+  height: '200px',
+  backgroundColor: '#101015',
+  border: '1px solid #27272a',
+  color: '#fff',
+  padding: '8px',
+  borderRadius: '6px',
+  fontSize: '12px',
+  fontFamily: 'monospace',
+  resize: 'none'
+};
+
 export const CodeModal: React.FC<CodeModalProps> = ({
   exportModalOpen,
   setExportModalOpen,
@@ -31,6 +44,7 @@ export const CodeModal: React.FC<CodeModalProps> = ({
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
               <button 
+                type="button"
                 className={`btn ${exportType === 'code' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ flex: 1 }}
                 onClick={() => setExportType('code')}
@@ -38,6 +52,7 @@ export const CodeModal: React.FC<CodeModalProps> = ({
                 GLSL Source
               </button>
               <button 
+                type="button"
                 className={`btn ${exportType === 'css-export' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ flex: 1 }}
                 onClick={() => setExportType('css-export')}
@@ -45,6 +60,7 @@ export const CodeModal: React.FC<CodeModalProps> = ({
                 CSS Source
               </button>
               <button 
+                type="button"
                 className={`btn ${exportType === 'react' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ flex: 1 }}
                 onClick={() => setExportType('react')}
@@ -55,22 +71,22 @@ export const CodeModal: React.FC<CodeModalProps> = ({
 
             {exportType === 'code' && (
               <>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>Fragment Shader Source Code:</label>
-                <textarea readOnly value={generatedGLSL} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
+                <label htmlFor="glsl-source-input" style={{ fontSize: '12px', color: '#a1a1aa', fontFamily: 'monospace' }}>Fragment Shader Source Code:</label>
+                <textarea id="glsl-source-input" readOnly value={generatedGLSL} style={textareaStyle} />
               </>
             )}
 
             {exportType === 'css-export' && (
               <>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>CSS Snippet:</label>
-                <textarea readOnly value={generatedCSS} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
+                <label htmlFor="css-source-input" style={{ fontSize: '12px', color: '#a1a1aa', fontFamily: 'monospace' }}>CSS Snippet:</label>
+                <textarea id="css-source-input" readOnly value={generatedCSS} style={textareaStyle} />
               </>
             )}
 
             {exportType === 'react' && (
               <>
-                <label style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>React Custom Component Code:</label>
-                <textarea readOnly value={generatedReactComponent} style={{ width: '100%', height: '200px', backgroundColor: '#101015', border: '1px solid #27272a', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', resize: 'none' }} />
+                <label htmlFor="react-source-input" style={{ fontSize: '12px', color: '#a1a1aa', fontFamily: 'monospace' }}>React Custom Component Code:</label>
+                <textarea id="react-source-input" readOnly value={generatedReactComponent} style={textareaStyle} />
               </>
             )}
 

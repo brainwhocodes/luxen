@@ -14,6 +14,17 @@ interface SetGeneratorModalProps {
   onDownload: () => void;
 }
 
+const containerStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 401,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  pointerEvents: 'none',
+  padding: '24px'
+};
+
 export function SetGeneratorModal({
   open,
   setCount,
@@ -31,7 +42,7 @@ export function SetGeneratorModal({
     <Dialog.Root open={open} onOpenChange={(op) => { if (!op) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Backdrop className="modal-backdrop" style={{ zIndex: 400 }} />
-        <div style={{ position: 'fixed', inset: 0, zIndex: 401, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', padding: '24px' }}>
+        <div style={containerStyle}>
           <Dialog.Popup className="modal-content" style={{ width: 'min(90vw, 560px)', pointerEvents: 'auto' }}>
             <div className="modal-head">
               <div>
@@ -43,7 +54,7 @@ export function SetGeneratorModal({
               </Dialog.Close>
             </div>
 
-            <div className="modal-note" style={{ fontSize: '11.5px', color: '#a1a1aa', lineHeight: '1.55', marginBottom: '14px' }}>
+            <div className="modal-note" style={{ fontSize: '12px', color: '#a1a1aa', lineHeight: '1.55', marginBottom: '14px' }}>
               Same style, palette and settings with different seeds. Use a set for hero, cards and section backgrounds that visually belong together.
             </div>
 
@@ -69,7 +80,7 @@ export function SetGeneratorModal({
 
             <div className="set-grid">
               {seeds.map((seed, idx) => (
-                <button key={idx} className="set-tile" onClick={() => onApplySeed(seed)}>
+                <button type="button" key={seed} className="set-tile" onClick={() => onApplySeed(seed)}>
                   <canvas id={`set-tile-canvas-${idx}`} />
                   <span className="set-tile-label mono">#{String(seed).padStart(4, '0')}</span>
                 </button>
@@ -80,7 +91,7 @@ export function SetGeneratorModal({
               <Dialog.Close className="btn btn-secondary" style={{ marginRight: '8px' }}>
                 Cancel
               </Dialog.Close>
-              <button className="btn btn-primary modal-dl" onClick={onDownload}>
+              <button type="button" className="btn btn-primary modal-dl" onClick={onDownload}>
                 <svg viewBox="0 0 16 16" style={{ width: '14px', height: '14px', marginRight: '6px' }}><path d="M8 2 V10 M4.5 7 L8 10.5 L11.5 7" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M3 13.5 H13" stroke="currentColor" strokeWidth="1.6" /></svg>
                 Download set as ZIP
               </button>

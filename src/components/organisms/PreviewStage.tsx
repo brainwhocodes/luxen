@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowsLeftRightIcon, StarsIcon } from '../atoms';
+import { ArrowsLeftRightIcon } from '../atoms/ArrowsLeftRightIcon';
+import { StarsIcon } from '../atoms/StarsIcon';
 import type { ShaderPattern, EditorParameter, PreviewSettings } from '../../types';
 
 interface PreviewStageProps {
@@ -14,6 +15,27 @@ interface PreviewStageProps {
   preview: PreviewSettings;
   codeSource: string;
 }
+const glassCardStaticStyle: React.CSSProperties = {
+  position: 'absolute',
+  width: '60%',
+  height: '50%',
+  left: '20%',
+  top: '25%',
+  borderRadius: '16px',
+  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.06)',
+  boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+  filter: 'url(#svg-displacement-filter)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#fff',
+  padding: '24px',
+  textAlign: 'center',
+  pointerEvents: 'auto'
+};
+
 
 export const PreviewStage: React.FC<PreviewStageProps> = ({
   selectedPattern,
@@ -99,30 +121,13 @@ export const PreviewStage: React.FC<PreviewStageProps> = ({
           <div 
             className="glass-card" 
             style={{
-              position: 'absolute',
-              width: '60%',
-              height: '50%',
-              left: '20%',
-              top: '25%',
-              borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.06)',
-              backdropFilter: `blur(${parameters.find(p => p.key === 'blur')?.value ?? 20}px)`,
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              filter: 'url(#svg-displacement-filter)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              padding: '24px',
-              textAlign: 'center',
-              pointerEvents: 'auto'
+              ...glassCardStaticStyle,
+              backdropFilter: `blur(${parameters.find(p => p.key === 'blur')?.value ?? 20}px)`
             }}
           >
             <StarsIcon />
             <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>ShaderBuild Hybrid Stage</h4>
-            <p style={{ margin: 0, fontSize: '11px', color: '#ccc' }}>WebGL flowing background combined with CSS glass card refraction overlay.</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#ccc' }}>WebGL flowing background combined with CSS glass card refraction overlay.</p>
           </div>
         </div>
       )}

@@ -1,7 +1,12 @@
 import React from 'react';
 import { Tabs, Switch } from '@base-ui/react';
-import { ShuffleIcon, PlusIcon, Swatch } from '../atoms';
-import { PresetChip, PatternCard, ControlRow, SeedControl } from '../molecules';
+import { ShuffleIcon } from '../atoms/ShuffleIcon';
+import { PlusIcon } from '../atoms/PlusIcon';
+import { Swatch } from '../atoms/Swatch';
+import { PresetChip } from '../molecules/PresetChip';
+import { PatternCard } from '../molecules/PatternCard';
+import { ControlRow } from '../molecules/ControlRow';
+import { SeedControl } from '../molecules/SeedControl';
 import type { ShaderPattern, EditorParameter, GradientPalette } from '../../types';
 
 interface ParametersPanelProps {
@@ -19,12 +24,25 @@ interface ParametersPanelProps {
   handleAddStop: () => void;
   handleRemoveStop: (id: string) => void;
   handleUpdateStopColor: (id: string, color: string) => void;
-  handleStopMouseDown: (e: React.MouseEvent<HTMLDivElement>, id: string) => void;
-  handleStopTouchStart: (e: React.TouchEvent<HTMLDivElement>, id: string) => void;
-  handleStopKeyDown: (e: React.KeyboardEvent<HTMLDivElement>, id: string) => void;
+  handleStopMouseDown: (e: React.MouseEvent<HTMLElement>, id: string) => void;
+  handleStopTouchStart: (e: React.TouchEvent<HTMLElement>, id: string) => void;
+  handleStopKeyDown: (e: React.KeyboardEvent<HTMLElement>, id: string) => void;
   palettePresets: GradientPalette[];
   handleApplyPalettePreset: (p: GradientPalette) => void;
 }
+
+const getRandomSeed = () => Math.floor(Math.random() * 10000);
+
+const inputRangeStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  opacity: 0,
+  cursor: 'grab',
+  margin: 0,
+  padding: 0,
+  width: '100%',
+  height: '100%'
+};
 
 export const ParametersPanel: React.FC<ParametersPanelProps> = ({
   selectedPattern,
@@ -69,7 +87,7 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
           min={param.min}
           max={param.max}
           onChange={(val) => handleParameterChange('seed', val)}
-          onRoll={() => handleParameterChange('seed', Math.floor(Math.random() * 10000))}
+          onRoll={() => handleParameterChange('seed', getRandomSeed())}
         />
       );
     }
@@ -175,21 +193,26 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
                   key={stop.id}
                   className={`color-stop-handle ${stop.id === activeStopId ? 'active' : ''}`}
                   style={{ left: `${stop.position * 100}%` }}
-                  onMouseDown={(e) => handleStopMouseDown(e, stop.id)}
-                  onTouchStart={(e) => handleStopTouchStart(e, stop.id)}
-                  onKeyDown={(e) => handleStopKeyDown(e, stop.id)}
-                  tabIndex={0}
-                  role="slider"
-                  aria-valuenow={stop.position * 100}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label="Color stop position slider"
-                />
+                >
+                  <input 
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={Math.round(stop.position * 100)}
+                    onChange={() => {}}
+                    onFocus={() => setActiveStopId(stop.id)}
+                    onKeyDown={(e) => handleStopKeyDown(e as any, stop.id)}
+                    onMouseDown={(e) => handleStopMouseDown(e, stop.id)}
+                    onTouchStart={(e) => handleStopTouchStart(e, stop.id)}
+                    aria-label="Color stop position"
+                    style={inputRangeStyle}
+                  />
+                </div>
               ))}
             </div>
 
             <div className="palette-actions">
-              <button className="palette-row-btn" onClick={handleRandomizePalette}>
+              <button type="button" className="palette-row-btn" onClick={handleRandomizePalette}>
                 <ShuffleIcon />
                 Randomize
               </button>
@@ -229,11 +252,13 @@ export const ParametersPanel: React.FC<ParametersPanelProps> = ({
               <div className="color-picker-popover">
                 <div className="picker-inputs">
                   <input 
+                    aria-label="Stop color picker"
                     type="color" 
                     value={palette.stops.find(s => s.id === activeStopId)?.color ?? '#ffffff'} 
                     onChange={(e) => handleUpdateStopColor(activeStopId, e.target.value)}
                   />
                   <input 
+                    aria-label="Stop color hex code"
                     type="text" 
                     value={palette.stops.find(s => s.id === activeStopId)?.color ?? ''} 
                     onChange={(e) => handleUpdateStopColor(activeStopId, e.target.value)}

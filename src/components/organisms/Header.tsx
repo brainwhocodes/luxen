@@ -1,16 +1,16 @@
 import React from 'react';
-import { SaveIcon, ExportIcon, DiceIcon, SettingsIcon, ArrowDownIcon } from '../atoms';
+import { SaveIcon } from '../atoms/SaveIcon';
+import { ExportIcon } from '../atoms/ExportIcon';
+import { DiceIcon } from '../atoms/DiceIcon';
+import { SettingsIcon } from '../atoms/SettingsIcon';
 import type { ShaderPattern, PreviewSettings } from '../../types';
 
 interface HeaderProps {
-  docName: string;
   isDirty: boolean;
   aspectRatio: string;
-  dropdownOpen: boolean;
   patterns: ShaderPattern[];
   selectedPattern: ShaderPattern;
   handleSelectPattern: (p: ShaderPattern) => void;
-  setDropdownOpen: (open: boolean) => void;
   setAspectRatio: (aspect: string) => void;
   handleSave: () => void;
   handleExportPNG: () => void;
@@ -25,15 +25,27 @@ interface HeaderProps {
   setPreview: React.Dispatch<React.SetStateAction<PreviewSettings>>;
 }
 
+const selectStyle: React.CSSProperties = {
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  MozAppearance: 'none',
+  paddingRight: '32px',
+  background: 'rgba(18, 18, 26, 0.82) url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\' viewBox=\'0 0 10 6\'><path d=\'M1 1 L5 5 L9 1\' fill=\'none\' stroke=\'%23ffffff\' stroke-width=\'1.6\'/></svg>") no-repeat right 12px center',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  cursor: 'pointer',
+  fontSize: 'inherit',
+  fontFamily: 'inherit',
+  color: 'inherit',
+  height: '34px',
+  borderRadius: '6px'
+};
+
 export const Header: React.FC<HeaderProps> = ({
-  docName,
   isDirty,
   aspectRatio,
-  dropdownOpen,
   patterns,
   selectedPattern,
   handleSelectPattern,
-  setDropdownOpen,
   setAspectRatio,
   handleSave,
   handleExportPNG,
@@ -54,9 +66,10 @@ export const Header: React.FC<HeaderProps> = ({
     </div>
 
     {/* Aspect Ratio Segmented Control */}
-    <div className="segmented-control" role="group" aria-label="Canvas aspect ratio">
+    <fieldset className="segmented-control" aria-label="Canvas aspect ratio" style={{ border: 'none', margin: 0, padding: '2px', display: 'inline-flex' }}>
       {['16:9', '3:2', '1:1', '4:5', '21:9'].map(ratio => (
         <button
+          type="button"
           key={ratio}
           className={`segmented-btn ${aspectRatio === ratio ? 'active' : ''}`}
           onClick={() => {
@@ -70,59 +83,51 @@ export const Header: React.FC<HeaderProps> = ({
           {ratio}
         </button>
       ))}
-    </div>
+    </fieldset>
 
     <div className="actions">
       {isDirty && <span className="dirty-indicator">Unsaved</span>}
 
       {/* Selected Pattern dropdown */}
       <div className="pattern-selector-container">
-        <button 
+        <select
+          aria-label="Select pattern"
+          value={selectedPattern.id}
+          onChange={(e) => {
+            const selected = patterns.find(p => p.id === e.target.value);
+            if (selected) handleSelectPattern(selected);
+          }}
           className="btn btn-secondary pattern-picker-trigger"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          aria-haspopup="listbox"
-          aria-expanded={dropdownOpen}
+          style={selectStyle}
         >
-          <span>{docName}</span>
-          <ArrowDownIcon />
-        </button>
-        
-        {dropdownOpen && (
-          <div className="dropdown-menu" role="listbox" style={{ right: 0 }}>
-            {patterns.map(p => (
-              <div
-                key={p.id}
-                className={`dropdown-item ${p.id === selectedPattern.id ? 'active' : ''}`}
-                onClick={() => handleSelectPattern(p)}
-                role="option"
-                aria-selected={p.id === selectedPattern.id}
-              >
-                {p.name}
-              </div>
-            ))}
-          </div>
-        )}
+          {patterns.map(p => (
+            <option key={p.id} value={p.id} style={{ backgroundColor: '#121116', color: '#fff' }}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <button className="btn btn-secondary" onClick={handleSave}>
+      <button type="button" className="btn btn-secondary" onClick={handleSave}>
         <SaveIcon />
         Save
       </button>
 
       {/* Export buttons from lumenshaders */}
-      <button className="btn btn-secondary" onClick={handleExportPNG} title="Save still image (PNG)">
+      <button type="button" className="btn btn-secondary" onClick={handleExportPNG} title="Save still image (PNG)">
         Image
       </button>
-      <button className="btn btn-secondary" onClick={handleExportWebM} title="Record WebM Video">
+      <button type="button" className="btn btn-secondary" onClick={handleExportWebM} title="Record WebM Video">
         Video
       </button>
-      <button className="btn btn-secondary" onClick={handleExportGIF} title="Render seamless looping GIF">
+      <button type="button" className="btn btn-secondary" onClick={handleExportGIF} title="Render seamless looping GIF">
         GIF
       </button>
-      <button className="btn btn-secondary" onClick={() => setSetModalOpen(true)} title="Generate set of variations">
+      <button type="button" className="btn btn-secondary" onClick={() => setSetModalOpen(true)} title="Generate set of variations">
         Set
       </button>
       <button 
+        type="button"
         className="btn btn-icon" 
         onClick={handleRandomizeAll} 
         title="Randomize parameters"
@@ -130,6 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
         <DiceIcon size={18} />
       </button>
       <button 
+        type="button"
         className="btn btn-icon" 
         onClick={() => { setExportType('code'); setExportModalOpen(true); }}
         title="Export Assets (Code)"
@@ -137,6 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
         <ExportIcon />
       </button>
       <button 
+        type="button"
         className="btn btn-icon" 
         onClick={() => setSettingsModalOpen(true)}
         title="Settings"

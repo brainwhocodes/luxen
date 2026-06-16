@@ -28,6 +28,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Canvas Resolution</span>
                 <select 
+                  aria-label="Canvas Resolution"
                   value={`${preview.width}x${preview.height}`}
                   onChange={(e) => {
                     const [w, h] = e.target.value.split('x').map(Number);
@@ -45,6 +46,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Loop Duration (seconds)</span>
                 <input 
+                  aria-label="Loop Duration (seconds)"
                   type="number"
                   value={preview.loopLength}
                   onChange={(e) => setPreview(prev => ({ ...prev, loopLength: Number(e.target.value) }))}
